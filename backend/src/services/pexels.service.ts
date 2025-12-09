@@ -1,142 +1,142 @@
 import axios from 'axios';
-import { config } from '../config/env';
 
-interface PexelsAsset {
-  type: 'video' | 'image';
-  url: string;
-  thumbnail?: string;
+interface PexelsPhoto {
   id: number;
+  width: number;
+  height: number;
+  url: string;
+  photographer: string;
+  photographer_url: string;
+  src: {
+    original: string;
+    large2x: string;
+    large: string;
+    medium: string;
+    small: string;
+    portrait: string;
+    landscape: string;
+    tiny: string;
+  };
 }
 
-export class PexelsService {
-  private apiKey = config.apiKeys.pexels || '';
-  private usedVideoIds = new Set<number>();
-  private usedImageIds = new Set<number>();
+interface PexelsVideo {
+  id: number;
+  width: number;
+  height: number;
+  duration: number;
+  url: string;
+  video_files: Array<{
+    id: number;
+    quality: string;
+    file_type: string;
+    width: number;
+    height: number;
+    link: string;
+  }>;
+}
 
-  /**
-   * Fetch video asset
-   */
-  async fetchVideoAsset(keywords: string): Promise<PexelsAsset | null> {
+class PexelsService {
+  private apiKey: string;
+  private baseUrl = 'https://api.pexels.com/v1';
+  private videoBaseUrl = 'https://api.pexels.com/videos';
+
+  constructor() {
+    this.apiKey = process.env.PEXELS_API_KEY || '';
+    
     if (!this.apiKey) {
-      console.log('⚠️ No Pexels API key configured');
-      return null;
-    }
-
-    try {
-      const response = await axios.get('https://api.pexels.com/videos/search', {
-        headers: { Authorization: this.apiKey },
-        params: { 
-          query: keywords, 
-          per_page: 15, 
-          orientation: 'landscape' 
-        },
-        timeout: 8000
-      });
-
-      if (response.data.videos && response.data.videos.length > 0) {
-        // Filter out already used videos
-        const available = response.data.videos.filter(
-          (v: any) => !this.usedVideoIds.has(v.id)
-        );
-        
-        const video = available.length > 0 
-          ? available[Math.floor(Math.random() * Math.min(5, available.length))]
-          : response.data.videos[0];
-        
-        this.usedVideoIds.add(video.id);
-        
-        // Find HD quality file
-        const hdFile = video.video_files.find(
-          (f: any) => f.quality === 'hd' && f.width >= 1280
-        ) || video.video_files[0];
-
-        return {
-          type: 'video',
-          url: hdFile.link,
-          thumbnail: video.image,
-          id: video.id
-        };
-      }
-
-      return null;
-    } catch (error: any) {
-      console.error('❌ Pexels video error:', error.message);
-      return null;
-    }
-  }
-
-  /**
-   * Fetch image asset
-   */
-  async fetchImageAsset(keywords: string): Promise<PexelsAsset | null> {
-    if (!this.apiKey) {
-      console.log('⚠️ No Pexels API key configured');
-      return null;
-    }
-
-    try {
-      const response = await axios.get('https://api.pexels.com/v1/search', {
-        headers: { Authorization: this.apiKey },
-        params: { 
-          query: keywords, 
-          per_page: 15, 
-          orientation: 'landscape' 
-        },
-        timeout: 8000
-      });
-
-      if (response.data.photos && response.data.photos.length > 0) {
-        // Filter out already used images
-        const available = response.data.photos.filter(
-          (p: any) => !this.usedImageIds.has(p.id)
-        );
-        
-        const photo = available.length > 0
-          ? available[Math.floor(Math.random() * Math.min(5, available.length))]
-          : response.data.photos[0];
-        
-        this.usedImageIds.add(photo.id);
-
-        return {
-          type: 'image',
-          url: photo.src.large2x,
-          thumbnail: photo.src.medium,
-          id: photo.id
-        };
-      }
-
-      return null;
-    } catch (error: any) {
-      console.error('❌ Pexels image error:', error.message);
-      return null;
-    }
-  }
-
-  /**
-   * Fetch asset based on background type
-   */
-  async fetchAsset(keywords: string, bgType: 'video' | 'image' | 'gradient'): Promise<PexelsAsset | null> {
-    if (bgType === 'gradient') {
-      return null; // Gradients don't need assets
-    }
-
-    const cleanKeywords = keywords.replace(/[^\w\s]/g, ' ').trim() || 'professional business office';
-
-    if (bgType === 'video') {
-      return this.fetchVideoAsset(cleanKeywords);
+      console.error('❌ Pexels API key not found in environment variables');
+      console.error('Please add PEXELS_API_KEY to your .env file');
     } else {
-      return this.fetchImageAsset(cleanKeywords);
+      console.log('✅ Pexels service initialized with API key');
     }
   }
 
-  /**
-   * Reset used assets (call this at start of new video generation)
-   */
-  resetUsedAssets(): void {
-    this.usedVideoIds.clear();
-    this.usedImageIds.clear();
-    console.log('🔄 Reset asset tracking');
+  async fetchImageAsset(keywords: string): Promise<{ id: number; url: string } | null> {
+    if (!this.apiKey) {
+      console.warn('⚠️ No Pexels API key configured');
+      return null;
+    }
+
+    try {
+      const query = keywords || 'business professional';
+      console.log(`🔍 Fetching image from Pexels: "${query}"`);
+
+      const response = await axios.get(`${this.baseUrl}/search`, {
+        headers: {
+          'Authorization': this.apiKey
+        },
+        params: {
+          query: query,
+          per_page: 15,
+          orientation: 'landscape'
+        }
+      });
+
+      if (response.data && response.data.photos && response.data.photos.length > 0) {
+        const randomIndex = Math.floor(Math.random() * Math.min(response.data.photos.length, 10));
+        const photo: PexelsPhoto = response.data.photos[randomIndex];
+        
+        console.log(`✅ Found Pexels image: ${photo.id} (${photo.width}x${photo.height})`);
+        
+        return {
+          id: photo.id,
+          url: photo.src.large2x
+        };
+      } else {
+        console.log(`⚠️ No images found for "${query}"`);
+        return null;
+      }
+    } catch (error: any) {
+      console.error('❌ Pexels image fetch error:', error.message);
+      return null;
+    }
+  }
+
+  async fetchVideoAsset(keywords: string): Promise<{ id: number; url: string } | null> {
+    if (!this.apiKey) {
+      console.warn('⚠️ No Pexels API key configured');
+      return null;
+    }
+
+    try {
+      const query = keywords || 'business professional';
+      console.log(`🎥 Fetching video from Pexels: "${query}"`);
+
+      const response = await axios.get(`${this.videoBaseUrl}/search`, {
+        headers: {
+          'Authorization': this.apiKey
+        },
+        params: {
+          query: query,
+          per_page: 15,
+          orientation: 'landscape'
+        }
+      });
+
+      if (response.data && response.data.videos && response.data.videos.length > 0) {
+        const randomIndex = Math.floor(Math.random() * Math.min(response.data.videos.length, 10));
+        const video: PexelsVideo = response.data.videos[randomIndex];
+        
+        const hdFile = video.video_files.find(f => f.width === 1920 && f.height === 1080) ||
+                       video.video_files.find(f => f.quality === 'hd') ||
+                       video.video_files[0];
+        
+        console.log(`✅ Found Pexels video: ${video.id} (${hdFile.width}x${hdFile.height})`);
+        
+        return {
+          id: video.id,
+          url: hdFile.link
+        };
+      } else {
+        console.log(`⚠️ No videos found for "${query}"`);
+        return null;
+      }
+    } catch (error: any) {
+      console.error('❌ Pexels video fetch error:', error.message);
+      return null;
+    }
   }
 }
 
-export default new PexelsService();
+const pexelsService = new PexelsService();
+export default pexelsService;

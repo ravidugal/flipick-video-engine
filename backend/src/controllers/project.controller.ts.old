@@ -1,0 +1,253 @@
+import { Request, Response } from 'express';
+import pool from '../config/database';
+
+export class ProjectController {
+  // List projects (filtered by tenant)
+  async list(req: Request, res: Response) {
+    try {
+      const userId = req.user.userId;
+      const tenantId = req.user.tenantId;
+      const role = req.user.role;
+      
+      let query, params;
+      
+      if (role === 'super_admin') {
+        // Super admin sees ALL projects with tenant info
+        query = `
+          SELECT p.*, t.name as tenant_name, 
+                 COUNT(s.id) as scene_count
+          FROM projects p
+          LEFT JOIN tenants t ON p.tenant_id = t.id
+          LEFT JOIN scenes s ON s.project_id = p.id
+          GROUP BY p.id, t.name
+          ORDER BY p.created_at DESC
+        `;
+        params = [];
+      } else {
+        // Tenant users only see their tenant's projects
+        query = `
+          SELECT p.*, COUNT(s.id) as scene_count
+          FROM projects p
+          LEFT JOIN scenes s ON s.project_id = p.id
+          WHERE p.tenant_id = $1
+          GROUP BY p.id
+          ORDER BY p.created_at DESC
+        `;
+        params = [tenantId];
+      }
+      
+      const result = await pool.query(query, params);
+      
+      res.json({
+        success: true,
+        projects: result.rows
+      });
+    } catch (error: any) {
+      console.error('List projects error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to load projects',
+        message: error.message
+      });
+    }
+  }
+  
+  // Get single project
+  async get(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const tenantId = req.user.tenantId;
+      const role = req.user.role;
+      
+      let query, params;
+      
+      if (role === 'super_admin') {
+        query = 'SELECT * FROM projects WHERE id = $1';
+        params = [id];
+      } else {
+        // Check tenant access
+        query = 'SELECT * FROM projects WHERE id = $1 AND tenant_id = $2';
+        params = [id, tenantId];
+      }
+      
+      const result = await pool.query(query, params);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found'
+        });
+      }
+      
+      res.json({
+        success: true,
+        project: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Get project error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to load project'
+      });
+    }
+  }
+  
+  // Create project
+  async create(req: Request, res: Response) {
+    try {
+      const { name, tenant_id } = req.body;
+      const userId = req.user.userId;
+      const userTenantId = req.user.tenantId;
+      const role = req.user.role;
+      
+      if (!name) {
+        return res.status(400).json({
+          success: false,
+          error: 'Project name is required'
+        });
+      }
+      
+      // Determine which tenant owns this project
+      let projectTenantId;
+      
+      if (role === 'super_admin') {
+        // Super admin can specify tenant, or defaults to their own
+        if (!tenant_id) {
+          return res.status(400).json({
+            success: false,
+            error: 'Tenant selection is required for Super Admin'
+          });
+        }
+        
+        // Verify tenant exists
+        const tenantCheck = await pool.query(
+          'SELECT id FROM tenants WHERE id = $1',
+          [tenant_id]
+        );
+        
+        if (tenantCheck.rows.length === 0) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid tenant selected'
+          });
+        }
+        
+        projectTenantId = tenant_id;
+      } else {
+        // Regular users always create in their own tenant
+        projectTenantId = userTenantId;
+      }
+      
+      const result = await pool.query(
+        `INSERT INTO projects (name, tenant_id, created_by, created_at, updated_at)
+         VALUES ($1, $2, $3, NOW(), NOW())
+         RETURNING *`,
+        [name, projectTenantId, userId]
+      );
+      
+      res.json({
+        success: true,
+        message: 'Project created successfully',
+        project: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Create project error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to create project',
+        message: error.message
+      });
+    }
+  }
+  
+  // Update project
+  async update(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { name } = req.body;
+      const tenantId = req.user.tenantId;
+      const role = req.user.role;
+      
+      if (!name) {
+        return res.status(400).json({
+          success: false,
+          error: 'Project name is required'
+        });
+      }
+      
+      let query, params;
+      
+      if (role === 'super_admin') {
+        query = 'UPDATE projects SET name = $1, updated_at = NOW() WHERE id = $2 RETURNING *';
+        params = [name, id];
+      } else {
+        // Check tenant access
+        query = 'UPDATE projects SET name = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3 RETURNING *';
+        params = [name, id, tenantId];
+      }
+      
+      const result = await pool.query(query, params);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found or access denied'
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Project updated successfully',
+        project: result.rows[0]
+      });
+    } catch (error: any) {
+      console.error('Update project error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update project'
+      });
+    }
+  }
+  
+  // Delete project
+  async delete(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const tenantId = req.user.tenantId;
+      const role = req.user.role;
+      
+      let query, params;
+      
+      if (role === 'super_admin') {
+        query = 'DELETE FROM projects WHERE id = $1 RETURNING *';
+        params = [id];
+      } else {
+        // Check tenant access
+        query = 'DELETE FROM projects WHERE id = $1 AND tenant_id = $2 RETURNING *';
+        params = [id, tenantId];
+      }
+      
+      const result = await pool.query(query, params);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Project not found or access denied'
+        });
+      }
+      
+      res.json({
+        success: true,
+        message: 'Project deleted successfully'
+      });
+    } catch (error: any) {
+      console.error('Delete project error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to delete project'
+      });
+    }
+  }
+}
+
+export default new ProjectController();

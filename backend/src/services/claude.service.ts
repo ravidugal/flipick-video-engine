@@ -29,13 +29,49 @@ export class ClaudeService {
   /**
    * Generate topics for a course
    */
-  async generateTopics(subject: string, trainingType: string = 'compliance'): Promise<Topic[]> {
+  async generateTopics(subject: string, trainingType: string = 'compliance', sceneCount: number = 15): Promise<Topic[]> {
     try {
+      // Calculate optimal topic/subtopic distribution based on scene count
+      // Reserve 1 scene for intro, rest are content scenes
+      const contentScenes = Math.max(sceneCount - 1, 5);
+      
+      // Determine number of topics (typically 4-5 subtopics per topic)
+      let topicCount: number;
+      let subtopicsPerTopic: number;
+      
+      if (contentScenes <= 10) {
+        // Small courses: 2-3 topics with 2-4 subtopics each
+        topicCount = Math.ceil(contentScenes / 3);
+        subtopicsPerTopic = Math.ceil(contentScenes / topicCount);
+      } else if (contentScenes <= 20) {
+        // Medium courses: 3-4 topics with 3-5 subtopics each
+        topicCount = Math.ceil(contentScenes / 4);
+        subtopicsPerTopic = Math.ceil(contentScenes / topicCount);
+      } else {
+        // Large courses: 5-6 topics with 4-5 subtopics each
+        topicCount = Math.ceil(contentScenes / 5);
+        subtopicsPerTopic = Math.ceil(contentScenes / topicCount);
+      }
+
       const prompt = `Create a training course outline for: ${subject}
 Training type: ${trainingType}
 
-Return 4-6 main topics with 2-4 subtopics each.
-Return ONLY valid JSON: {"topics":[{"name":"Topic","subtopics":["Sub1","Sub2"]}]}`;
+IMPORTANT: Generate exactly ${topicCount} main topics with approximately ${subtopicsPerTopic} subtopics each.
+The total number of topics + subtopics MUST equal exactly ${contentScenes} scenes.
+
+Structure guideline:
+- Each main topic counts as 1 scene
+- Each subtopic counts as 1 scene
+- Total scenes needed: ${contentScenes}
+
+Example for ${contentScenes} scenes with ${topicCount} topics:
+Topic 1 (1 scene) + ${subtopicsPerTopic} subtopics = ${subtopicsPerTopic + 1} scenes
+Repeat for ${topicCount} topics to reach ${contentScenes} total
+
+Return ONLY valid JSON in this exact format:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2","Subtopic 3"]}]}
+
+NO markdown, NO code blocks, NO explanatory text - ONLY the JSON object.`;
 
       const response = await axios.post(
         this.apiUrl,
@@ -60,16 +96,48 @@ Return ONLY valid JSON: {"topics":[{"name":"Topic","subtopics":["Sub1","Sub2"]}]
       if (match) {
         const parsed = JSON.parse(match[0]);
         if (parsed.topics && parsed.topics.length) {
-          console.log('✅ Generated', parsed.topics.length, 'topics');
-          return parsed.topics;
-        }
+  let totalItems = parsed.topics.reduce((sum: number, t: Topic) => 
+    sum + 1 + (t.subtopics?.length || 0), 0);
+  
+  // Truncate if exceeds target
+  if (totalItems > contentScenes) {
+    console.log(`⚠️ Generated ${totalItems} scenes, truncating to ${contentScenes}`);
+    let remaining = contentScenes;
+    const truncatedTopics: Topic[] = [];
+    
+    for (const topic of parsed.topics) {
+      if (remaining <= 0) break;
+      
+      // Always include the topic itself
+      if (remaining === 1) {
+        truncatedTopics.push({ name: topic.name, subtopics: [] });
+        remaining = 0;
+      } else {
+        const subtopicsToTake = Math.min(topic.subtopics?.length || 0, remaining - 1);
+        truncatedTopics.push({
+          name: topic.name,
+          subtopics: topic.subtopics?.slice(0, subtopicsToTake) || []
+        });
+        remaining -= (1 + subtopicsToTake);
+      }
+    }
+    
+    totalItems = truncatedTopics.reduce((sum: number, t: Topic) => 
+      sum + 1 + (t.subtopics?.length || 0), 0);
+    console.log(`✅ Truncated to ${truncatedTopics.length} topics with ${totalItems} total scenes`);
+    return truncatedTopics;
+  }
+  
+  console.log(`✅ Generated ${parsed.topics.length} topics with ${totalItems} total scenes (target: ${contentScenes})`);
+  return parsed.topics;
+}
       }
 
       // Fallback
-      return this.generateFallbackTopics(subject);
+      return this.generateFallbackTopics(subject, sceneCount || 15);
     } catch (error: any) {
       console.error('❌ Claude topics error:', error.message);
-      return this.generateFallbackTopics(subject);
+      return this.generateFallbackTopics(subject, sceneCount || 15);
     }
   }
 
@@ -86,7 +154,7 @@ Return ONLY valid JSON: {"topics":[{"name":"Topic","subtopics":["Sub1","Sub2"]}]
       const prompt = this.buildPromptForLayout(layout, topic, subtopic, courseName);
       
       console.log(`🤖 Generating AI content: "${subtopic}" (${layout})`);
-
+      
       const response = await axios.post(
         this.apiUrl,
         {
@@ -100,28 +168,60 @@ Return ONLY valid JSON: {"topics":[{"name":"Topic","subtopics":["Sub1","Sub2"]}]
             'x-api-key': this.apiKey,
             'anthropic-version': '2023-06-01'
           },
-          timeout: 30000
+          timeout: 60000
         }
       );
 
-      let text = response.data.content[0].text;
-      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const text = response.data.content[0].text;
+      const match = text.match(/\{[\s\S]*\}/);
       
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const content = JSON.parse(jsonMatch[0]);
-        console.log(`✅ AI content generated: "${subtopic}"`);
-        return content;
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        console.log(`✅ Generated ${layout} content for: ${subtopic}`);
+        return parsed;
       }
 
-      console.log('⚠️ Could not parse Claude response');
+      console.log(`⚠️ No valid JSON in response for: ${subtopic}`);
       return null;
+
     } catch (error: any) {
-      console.error('❌ Claude content error:', error.message);
+      console.error(`❌ Claude scene error (${subtopic}):`, error.message);
       return null;
     }
   }
 
+  /**
+   * Generic content generation method for Claude API
+   */
+  async generateContent(prompt: string): Promise<string> {
+    try {
+      const response = await axios.post(
+        this.apiUrl,
+        {
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 4000,
+          messages: [{ role: 'user', content: prompt }]
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': this.apiKey,
+            'anthropic-version': '2023-06-01'
+          },
+          timeout: 30000
+        }
+      );
+
+      return response.data.content[0].text;
+      } catch (error: any) {
+      console.error('❌ Claude API error:', error.message);
+      if (error.code === 'ECONNABORTED') {
+        console.error('⏱️ Request timeout after 30 seconds');
+      }
+      throw new Error('Failed to generate content with Claude');
+    }
+
+  }
   /**
    * Build prompt for specific layout
    */
@@ -132,24 +232,30 @@ Return ONLY valid JSON: {"topics":[{"name":"Topic","subtopics":["Sub1","Sub2"]}]
     courseName: string
   ): string {
     const basePrompt = `Generate content for a training scene about "${subtopic}" in the topic "${topic}" for ${courseName}.`;
-    
+
     switch (layout) {
       case 'bullets':
         return `${basePrompt}
-Generate 3 specific, actionable bullet points.
-Return JSON: {"body": "intro text", "bullets": ["point1", "point2", "point3"], "narration": "script", "bgType": "video"}
+Generate 3 bullet points.
+Return JSON: {"body": "intro sentence", "bullets": ["point 1", "point 2", "point 3"], "narration": "voice-over script", "bgType": "video"}
 IMPORTANT: Return ONLY valid JSON, no markdown, no other text.`;
 
       case 'stat':
         return `${basePrompt}
-Generate a realistic, relevant statistic.
-Return JSON: {"statValue": "87%", "statLabel": "description", "narration": "script", "bgType": "gradient"}
+Generate impressive statistic.
+Return JSON: {"statValue": "87%", "statLabel": "descriptive label", "narration": "script", "bgType": "gradient"}
 IMPORTANT: Return ONLY valid JSON, no markdown, no other text.`;
 
       case 'quote':
         return `${basePrompt}
-Generate an impactful quote.
-Return JSON: {"quote": "quote text", "quoteAuthor": "Author Name", "narration": "script", "bgType": "gradient"}
+Generate inspiring quote.
+Return JSON: {"quote": "quote text", "quoteAuthor": "Expert Name", "narration": "script", "bgType": "gradient"}
+IMPORTANT: Return ONLY valid JSON, no markdown, no other text.`;
+
+      case 'fulltext':
+        return `${basePrompt}
+Write paragraph (3-4 sentences).
+Return JSON: {"body": "paragraph", "narration": "script", "bgType": "video"}
 IMPORTANT: Return ONLY valid JSON, no markdown, no other text.`;
 
       case 'cards2':
@@ -193,13 +299,39 @@ IMPORTANT: Return ONLY valid JSON, no markdown, no other text.`;
   /**
    * Fallback topics if Claude fails
    */
-  private generateFallbackTopics(subject: string): Topic[] {
-    return [
-      { name: `Understanding ${subject}`, subtopics: ['Key Concepts', 'Why It Matters', 'Core Principles'] },
-      { name: 'Best Practices', subtopics: ['Guidelines', 'Common Mistakes', 'Expert Tips'] },
-      { name: 'Implementation', subtopics: ['Getting Started', 'Daily Application', 'Measuring Success'] },
-      { name: 'Advanced Topics', subtopics: ['Complex Scenarios', 'Case Studies', 'Future Trends'] }
+  private generateFallbackTopics(subject: string, sceneCount: number = 15): Topic[] {
+    const contentScenes = Math.max(sceneCount - 1, 5);
+    const topicCount = Math.max(Math.ceil(contentScenes / 4), 2);
+    const subtopicsPerTopic = Math.floor((contentScenes - topicCount) / topicCount);
+
+    const fallbackTopics: Topic[] = [
+      { 
+        name: `Understanding ${subject}`, 
+        subtopics: Array.from({length: subtopicsPerTopic}, (_, i) => 
+          ['Key Concepts', 'Why It Matters', 'Core Principles', 'Foundation', 'Overview'][i] || `Concept ${i+1}`
+        )
+      },
+      { 
+        name: 'Best Practices', 
+        subtopics: Array.from({length: subtopicsPerTopic}, (_, i) => 
+          ['Guidelines', 'Common Mistakes', 'Expert Tips', 'Do\'s and Don\'ts'][i] || `Practice ${i+1}`
+        )
+      },
+      { 
+        name: 'Implementation', 
+        subtopics: Array.from({length: subtopicsPerTopic}, (_, i) => 
+          ['Getting Started', 'Daily Application', 'Measuring Success', 'Action Steps'][i] || `Step ${i+1}`
+        )
+      },
+      { 
+        name: 'Advanced Topics', 
+        subtopics: Array.from({length: subtopicsPerTopic}, (_, i) => 
+          ['Complex Scenarios', 'Case Studies', 'Future Trends', 'Expert Level'][i] || `Advanced ${i+1}`
+        )
+      }
     ];
+
+    return fallbackTopics.slice(0, topicCount);
   }
 }
 

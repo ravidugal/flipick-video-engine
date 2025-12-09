@@ -1,0 +1,96 @@
+<div class="create-project">
+  <!-- Header -->
+  <header class="page-header">
+    <button class="btn-back" (click)="goBack()">← Back</button>
+    <h1>Create New Video</h1>
+  </header>
+
+  <!-- Step 1: Input Form -->
+  <div class="form-container" *ngIf="currentStep === 1">
+    <div class="form-card">
+      <h2>What would you like to create?</h2>
+      <p class="form-subtitle">Enter a topic or prompt for your AI-generated educational video</p>
+
+      <div class="form-group">
+        <label for="prompt">Video Topic / Prompt</label>
+        <textarea 
+          id="prompt"
+          [(ngModel)]="prompt"
+          placeholder="e.g., Explain the basics of machine learning for beginners, including supervised and unsupervised learning with real-world examples..."
+          rows="4"
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="title">Project Title (optional)</label>
+        <input 
+          type="text"
+          id="title"
+          [(ngModel)]="title"
+          placeholder="e.g., Machine Learning 101"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Number of Scenes</label>
+        <div class="scene-count-selector">
+          <button 
+            *ngFor="let count of [4, 5, 6, 7, 8]"
+            [class.active]="sceneCount === count"
+            (click)="sceneCount = count"
+          >
+            {{ count }}
+          </button>
+        </div>
+        <p class="hint">More scenes = longer video with more detail</p>
+      </div>
+
+      <div class="error-message" *ngIf="error">
+        {{ error }}
+      </div>
+
+      <button 
+        class="btn-generate"
+        (click)="startGeneration()"
+        [disabled]="loading || !prompt.trim()"
+      >
+        🚀 Generate Video Content
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 2: Generation Progress -->
+  <div class="progress-container" *ngIf="currentStep === 2">
+    <div class="progress-card">
+      <div class="progress-icon">🎬</div>
+      <h2>Creating Your Video</h2>
+      <p class="progress-message">{{ loadingMessage }}</p>
+      
+      <div class="progress-bar-container">
+        <div class="progress-bar" [style.width.%]="getProgress()"></div>
+      </div>
+      <span class="progress-percent">{{ getProgress() }}%</span>
+
+      <div class="scenes-progress" *ngIf="generatedScenes.length > 0">
+        <div 
+          class="scene-item"
+          *ngFor="let scene of generatedScenes; let i = index"
+          [class.completed]="scene.content && scene.design"
+          [class.generating]="currentGeneratingScene === i + 1"
+        >
+          <span class="scene-number">{{ scene.order }}</span>
+          <span class="scene-title">{{ scene.title }}</span>
+          <span class="scene-status">
+            <span *ngIf="scene.content && scene.design">✓</span>
+            <span *ngIf="currentGeneratingScene === i + 1 && (!scene.content || !scene.design)" class="dot-pulse"></span>
+          </span>
+        </div>
+      </div>
+
+      <div class="error-message" *ngIf="error">
+        {{ error }}
+        <button class="btn-retry" (click)="currentStep = 1">Try Again</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,28 +1,20 @@
 import { Request, Response } from 'express';
+import { pool } from '../config/database';
 import claudeService from '../services/claude.service';
 import pexelsService from '../services/pexels.service';
-import pool from '../config/database';
 
-const GRADIENTS = [
-  'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-  'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)',
-  'linear-gradient(135deg, #14532d 0%, #166534 100%)',
-  'linear-gradient(135deg, #7c2d12 0%, #9a3412 100%)',
-  'linear-gradient(135deg, #4c1d95 0%, #6d28d9 100%)',
-  'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)',
-  'linear-gradient(135deg, #134e4a 0%, #0f766e 100%)',
-  'linear-gradient(135deg, #44403c 0%, #57534e 100%)'
-];
-
-const LAYOUTS = ['bullets', 'stat', 'cards2', 'fulltext', 'quote', 'timeline', 'iconlist', 'cards4', 'split', 'bullets'];
+interface Topic {
+  name: string;
+  subtopics: string[];
+}
 
 export class AIController {
   /**
-   * Generate topics for a course
+   * Generate course topics
    */
   async generateTopics(req: Request, res: Response) {
     try {
-      const { subject, trainingType } = req.body;
+      const { subject, trainingType, sceneCount } = req.body;
 
       if (!subject) {
         return res.status(400).json({ error: 'Subject is required' });
@@ -30,12 +22,12 @@ export class AIController {
 
       console.log(`🎓 Generating topics for: ${subject}`);
 
-      const topics = await claudeService.generateTopics(subject, trainingType || 'compliance');
+      const topics = await claudeService.generateTopics(subject, trainingType, sceneCount || 15);
 
       res.json({
         success: true,
         topics,
-        source: 'claude'
+        count: topics.length
       });
     } catch (error: any) {
       console.error('❌ Generate topics error:', error);
@@ -47,177 +39,178 @@ export class AIController {
   }
 
   /**
-   * Generate complete video with scenes and assets
+   * Generate complete video with scenes
    */
   async generateVideo(req: Request, res: Response) {
     try {
-      const { subject, courseName, trainingType, topics, sceneCount } = req.body;
+      const { projectId, subject, courseName, trainingType, topics, sceneCount } = req.body;
 
-      if (!subject || !topics) {
-        return res.status(400).json({ error: 'Subject and topics are required' });
+      if (!topics || !Array.isArray(topics)) {
+        return res.status(400).json({ error: 'Topics array is required' });
       }
 
       console.log(`🎬 Generating video: ${courseName || subject}`);
 
-      // Reset asset tracking
-      pexelsService.resetUsedAssets();
+      // Reset asset tracking for this generation
+      console.log('🔄 Reset asset tracking');
+      const usedVideoAssets = new Set<number>();
+      const usedImageAssets = new Set<number>();
 
-      // Build scene list
-      const sceneList: any[] = [];
-      
+      // Calculate scenes per topic
+      const targetScenes = Math.min(sceneCount || 15, 50);
+      const contentScenes = Math.max(targetScenes - topics.length - 2, topics.length);
+      const scenesPerTopic = Math.floor(contentScenes / topics.length);
+
+      // Generate scenes
+      const finalScenes: any[] = [];
+
       // Intro scene
-      sceneList.push({ 
-        type: 'intro', 
-        topic: courseName || subject 
+      finalScenes.push({
+        type: 'intro',
+        title: courseName || subject,
+        layout: 'intro',
+        bgType: 'video',
+        assetKeywords: trainingType || 'business professional training'
       });
 
-      // Content scenes
-      topics.forEach((topic: any, ti: number) => {
-        // Chapter divider
-        sceneList.push({ 
-          type: 'chapter', 
-          topic: topic.name, 
-          chapterNum: ti + 1 
+      // Generate content scenes for each topic
+      for (const topic of topics) {
+        // Chapter marker
+        finalScenes.push({
+          type: 'chapter',
+          title: topic.name,
+          layout: 'chapter',
+          bgType: 'gradient'
         });
 
-        // Subtopic scenes
-        (topic.subtopics || []).forEach((sub: string, si: number) => {
-          sceneList.push({
-            type: 'content',
-            topic: topic.name,
-            subtopic: sub,
-            chapterNum: ti + 1,
-            subNum: si + 1
-          });
-        });
-      });
+        // Generate scenes for subtopics
+        const subtopics = Array.isArray(topic.subtopics) ? topic.subtopics : [];
+        const scenesToGenerate = Math.min(subtopics.length, scenesPerTopic);
 
-      // Closing scene
-      sceneList.push({ 
-        type: 'closing', 
-        topic: courseName || subject 
-      });
+        for (let i = 0; i < scenesToGenerate; i++) {
+          const subtopic = typeof subtopics[i] === 'string' 
+            ? subtopics[i] 
+            : (subtopics[i] as any).name || 'Key Concept';
 
-      // Limit scenes
-      const limitedScenes = sceneList.slice(0, sceneCount || 15);
+          // Choose layout with weighted selection
+          // 40% partial-image layouts, 60% full-background layouts
+          const partialImageLayouts = ['half-left', 'half-right', 'third-sidebar'];
+          const fullBackgroundLayouts = ['bullets', 'fulltext', 'stat', 'quote', 'cards2', 'cards4', 'timeline', 'iconlist', 'split'];
+          
+          let layout: string;
+          if (Math.random() < 0.4) {
+            // 40% chance: use partial-image layout
+            layout = partialImageLayouts[Math.floor(Math.random() * partialImageLayouts.length)];
+          } else {
+            // 60% chance: use full-background layout
+            layout = fullBackgroundLayouts[Math.floor(Math.random() * fullBackgroundLayouts.length)];
+          }
 
-      // Generate content for each scene (WITHOUT database connection)
-      const finalScenes = [];
-      let layoutIndex = 0;
-      let gradientIndex = 0;
-
-      console.log(`🎨 Generating ${limitedScenes.length} scenes...`);
-
-      for (let idx = 0; idx < limitedScenes.length; idx++) {
-        const s = limitedScenes[idx];
-        let scene: any = {};
-
-        if (s.type === 'intro') {
-          scene = {
-            type: 'intro',
-            layout: 'headline',
-            bgType: 'video',
-            assetKeywords: `${s.topic} corporate professional team success modern office`,
-            title: s.topic,
-            subtitle: `${topics.length} Chapters • Professional Training`,
-            body: 'Master essential skills through engaging, practical learning.'
-          };
-
-          // Fetch video asset
-          const asset = await pexelsService.fetchAsset(scene.assetKeywords, 'video');
-          if (asset) scene.asset = asset;
-
-        } else if (s.type === 'chapter') {
-          scene = {
-            type: 'chapter',
-            layout: 'headline',
-            bgType: 'gradient',
-            gradient: GRADIENTS[gradientIndex % GRADIENTS.length],
-            eyebrow: `Chapter ${s.chapterNum}`,
-            title: s.topic,
-            subtitle: 'Key concepts and practical applications'
-          };
-          gradientIndex++;
-
-        } else if (s.type === 'content') {
-          const layout = LAYOUTS[layoutIndex % LAYOUTS.length];
-          layoutIndex++;
-
-          console.log(`🤖 Generating scene ${idx + 1}/${limitedScenes.length}: "${s.subtopic}"`);
-
-          // Try to generate with AI
+          // Generate content with Claude AI
           let sceneContent = await claudeService.generateSceneContent(
             layout,
-            s.topic,
-            s.subtopic,
+            topic.name,
+            subtopic,
             courseName || subject
           );
 
-          // Use fallback if AI fails
+          // Fallback if Claude fails
           if (!sceneContent) {
-            console.log(`⚠️ Using fallback for: ${s.subtopic}`);
-            sceneContent = this.generateFallbackContent(layout, s.topic, s.subtopic, idx);
+            sceneContent = this.generateFallbackContent(layout, subtopic);
           }
 
-          scene = {
+          // Ensure partial-image layouts always have image/video background
+          if (['half-left', 'half-right', 'third-sidebar'].includes(layout)) {
+            if (sceneContent) sceneContent.bgType = 'image';
+          }
+
+          finalScenes.push({
             type: 'content',
-            layout,
-            eyebrow: `${s.chapterNum}.${s.subNum}`,
-            title: s.subtopic,
-            assetKeywords: `${s.subtopic} professional workplace business`,
-            ...sceneContent
-          };
-
-          // Apply gradient if needed
-          if (scene.bgType === 'gradient') {
-            scene.gradient = GRADIENTS[(gradientIndex + idx) % GRADIENTS.length];
-          } else {
-            // Fetch asset
-            const asset = await pexelsService.fetchAsset(scene.assetKeywords, scene.bgType);
-            if (asset) scene.asset = asset;
-          }
-
-        } else if (s.type === 'closing') {
-          scene = {
-            type: 'closing',
-            layout: 'headline',
-            bgType: 'video',
-            assetKeywords: 'success achievement celebration team applause business happy',
-            title: 'Training Complete!',
-            subtitle: 'Congratulations on Your Achievement',
-            body: `You completed all ${topics.length} chapters. Apply what you learned!`
-          };
-
-          // Fetch video asset
-          const asset = await pexelsService.fetchAsset(scene.assetKeywords, 'video');
-          if (asset) scene.asset = asset;
+            layout: layout,
+            title: subtopic,
+            eyebrow: topic.name,
+            ...sceneContent,
+            assetKeywords: `${subtopic} ${topic.name} ${trainingType || 'business'}`
+          });
         }
+      }
 
-        finalScenes.push(scene);
+      console.log(`🎨 Generating ${finalScenes.length} scenes...`);
+
+      // Fetch assets for scenes
+      for (const scene of finalScenes) {
+        if (scene.bgType === 'video') {
+          // Get video asset
+          const video = await pexelsService.fetchVideoAsset(scene.assetKeywords || scene.title);
+          if (video && !usedVideoAssets.has(video.id)) {
+            scene.assetUrl = video.url;
+            scene.assetType = 'video';
+            scene.assetId = video.id;
+            usedVideoAssets.add(video.id);
+          }
+        } else if (scene.bgType === 'image') {
+          // Get image asset
+          const image = await pexelsService.fetchImageAsset(scene.assetKeywords || scene.title);
+          if (image && !usedImageAssets.has(image.id)) {
+            scene.assetUrl = image.url;
+            scene.assetType = 'image';
+            scene.assetId = image.id;
+            usedImageAssets.add(image.id);
+          }
+        } else if (scene.bgType === 'gradient') {
+          // Gradient scenes don't need assets
+          scene.gradient = this.getRandomGradient();
+        }
       }
 
       console.log(`✅ Generated ${finalScenes.length} scenes with assets`);
 
-      // NOW save to database (quick transaction)
+      // Save to database
       console.log('💾 Saving to database...');
-      
+
       const client = await pool.connect();
-      
+
       try {
         await client.query('BEGIN');
 
-        const projectResult = await client.query(
-          `INSERT INTO projects (name, prompt, course_name, training_type, scene_count, status)
-           VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-          [courseName || subject, subject, courseName || subject, trainingType || 'compliance', finalScenes.length, 'completed']
-        );
+        // Delete existing scenes if regenerating
+        if (projectId) {
+          await client.query(
+            'DELETE FROM scenes WHERE project_id = $1',
+            [projectId]
+          );
+          console.log('🗑️ Cleared existing scenes for regeneration');
+        }
 
-        const project = projectResult.rows[0];
+        let project;
+        
+        if (projectId) {
+          // Use existing project
+          const projectResult = await client.query(
+            'SELECT * FROM projects WHERE id = $1',
+            [projectId]
+          );
+          project = projectResult.rows[0];
+          
+          if (!project) {
+            throw new Error('Project not found');
+          }
+          
+          console.log(`✅ Using existing project: ${project.id}`);
+        } else {
+          // Create new project (backward compatibility)
+          const projectResult = await client.query(
+            `INSERT INTO projects (name, prompt, course_name, training_type, scene_count, status)
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [courseName || subject, subject, courseName || subject, trainingType || 'compliance', finalScenes.length, 'completed']
+          );
+          project = projectResult.rows[0];
+          console.log(`✅ Created new project: ${project.id}`);
+        }
 
         // Insert scenes
         for (let i = 0; i < finalScenes.length; i++) {
           const scene = finalScenes[i];
-
           await client.query(
             `INSERT INTO scenes (
               project_id, scene_number, scene_type, layout,
@@ -231,45 +224,134 @@ export class AIController {
               i + 1,
               scene.type || 'content',
               scene.layout || 'bullets',
-              scene.eyebrow,
-              scene.title,
-              scene.subtitle,
-              scene.body,
-              scene.narration,
+              scene.eyebrow || null,
+              scene.title || 'Untitled',
+              scene.subtitle || null,
+              scene.body || null,
+              scene.narration || null,
               scene.bullets ? JSON.stringify(scene.bullets) : null,
               scene.cards ? JSON.stringify(scene.cards) : null,
               scene.timelineItems ? JSON.stringify(scene.timelineItems) : null,
               scene.iconItems ? JSON.stringify(scene.iconItems) : null,
-              scene.statValue,
-              scene.statLabel,
-              scene.quote,
-              scene.quoteAuthor,
-              scene.bgType || 'video',
-              scene.gradient,
-              scene.asset?.url,
-              scene.asset?.type,
-              scene.asset?.id,
-              scene.assetKeywords
+              scene.statValue || null,
+              scene.statLabel || null,
+              scene.quote || null,
+              scene.quoteAuthor || null,
+              scene.bgType || 'gradient',
+              scene.gradient || null,
+              scene.assetUrl || null,
+              scene.assetType || null,
+              scene.assetId || null,
+              scene.assetKeywords || null
             ]
           );
         }
 
+        // Generate MCQ questions if enabled
+        if (project.include_quiz && project.quiz_count > 0) {
+          console.log(`📝 Generating ${project.quiz_count} MCQ questions...`);
+          
+          // Gather all scene content for context
+          const contentSummary = finalScenes
+            .filter(s => s.type === 'content')
+            .map(s => `${s.title}: ${s.body || s.bullets?.join(', ') || ''}`)
+            .join('\n');
+          
+          try {
+            await this._generateMCQsInternal(
+              project.id,
+              contentSummary,
+              project.quiz_count,
+              project.name,
+              client  // Pass transaction client
+            );
+            
+            console.log(`✅ MCQ questions generated successfully`);
+          } catch (error: any) {
+            console.error(`❌ MCQ generation failed:`, error.message);
+            // Don't fail the whole request if MCQ generation fails
+          }
+        }
+
+        console.log(`💾 Saved project: ${project.id} with ${finalScenes.length} scenes`);
+
+        // ============================================================
+// GENERATE PROJECT THUMBNAIL (with AI fallback)
+// ============================================================
+console.log('🖼️ Generating project thumbnail...');
+
+let thumbnailUrl = null;
+
+// STEP 1: Try to find image scene
+const imageScene = finalScenes.find(scene => 
+  scene.assetType === 'image' && scene.assetUrl
+);
+
+if (imageScene) {
+  thumbnailUrl = imageScene.assetUrl;
+  console.log(`✅ Using image from scene: "${imageScene.title}"`);
+} else {
+  // STEP 2: No images? Generate from Pexels
+  console.log('⚠️ No image scene - generating AI thumbnail...');
+  
+  try {
+    const searchQuery = courseName || project.name || trainingType || 'business training';
+    console.log(`🔍 Generating thumbnail for: "${searchQuery}"`);
+    
+    const pexelsImage = await pexelsService.fetchImageAsset(searchQuery);
+    
+    if (pexelsImage && pexelsImage.url) {
+      thumbnailUrl = pexelsImage.url;
+      console.log(`✅ AI-generated thumbnail from Pexels`);
+    } else {
+      // STEP 3: Last resort - use video scene
+      const videoScene = finalScenes.find(s => s.assetType === 'video' && s.assetUrl);
+      if (videoScene) {
+        thumbnailUrl = videoScene.assetUrl;
+        console.log(`✅ Using video thumbnail as fallback`);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Thumbnail generation error:', error);
+  }
+}
+
+// Save thumbnail
+if (thumbnailUrl) {
+  try {
+    await client.query(
+      'UPDATE projects SET thumbnail_url = $1 WHERE id = $2',
+      [thumbnailUrl, project.id]
+    );
+    console.log(`✅ Thumbnail saved: ${thumbnailUrl.substring(0, 60)}...`);
+  } catch (error) {
+    console.error('❌ Failed to save thumbnail:', error);
+  }
+} else {
+  console.log('⚠️ No thumbnail available');
+}
+// ============================================================
+
         await client.query('COMMIT');
 
-        console.log(`💾 Saved project: ${project.id}`);
+        // Fetch complete project with scenes
+        const scenesResult = await pool.query(
+          'SELECT * FROM scenes WHERE project_id = $1 ORDER BY scene_number',
+          [project.id]
+        );
 
         res.json({
           success: true,
+          message: 'Video generated successfully',
           project: {
             ...project,
-            scenes: finalScenes
+            scenes: scenesResult.rows
           }
         });
 
-      } catch (dbError: any) {
+      } catch (error) {
         await client.query('ROLLBACK');
-        console.error('❌ Database error:', dbError);
-        throw dbError;
+        throw error;
       } finally {
         client.release();
       }
@@ -284,52 +366,42 @@ export class AIController {
   }
 
   /**
-   * Fallback content generation
+   * Generate fallback content when AI fails
    */
-  private generateFallbackContent(layout: string, topic: string, subtopic: string, index: number): any {
+  private generateFallbackContent(layout: string, subtopic: string): any {
     const content: any = {
-      layout,
-      title: subtopic || topic,
-      assetKeywords: `${subtopic || topic} professional workplace business`
+      title: subtopic,
+      narration: `Learn about ${subtopic}.`,
+      bgType: 'gradient'
     };
 
     switch (layout) {
       case 'bullets':
-        content.body = 'Essential points to understand:';
+        content.body = `Key points about ${subtopic}:`;
         content.bullets = [
-          'First key principle for success',
-          'Critical implementation factor',
-          'Industry best practice'
+          'Essential concept to understand',
+          'Practical application in daily work',
+          'Best practices to follow'
         ];
         content.bgType = 'video';
         break;
-
       case 'stat':
-        const stats = [
-          { value: '87%', label: 'report improved outcomes' },
-          { value: '3.5x', label: 'faster results' },
-          { value: '94%', label: 'find this valuable' }
-        ];
-        const stat = stats[index % stats.length];
-        content.statValue = stat.value;
-        content.statLabel = stat.label;
+        content.statValue = '85%';
+        content.statLabel = `Success rate with proper ${subtopic}`;
         content.bgType = 'gradient';
         break;
-
       case 'quote':
-        content.quote = 'Excellence is a continuous journey of improvement.';
-        content.quoteAuthor = 'Industry Expert';
+        content.quote = 'Excellence is not a skill. It is an attitude.';
+        content.quoteAuthor = 'Ralph Marston';
         content.bgType = 'gradient';
         break;
-
       case 'cards2':
         content.cards = [
-          { icon: '✅', title: 'Do This', desc: 'Follow best practices' },
-          { icon: '❌', title: 'Avoid This', desc: 'Common mistakes' }
+          { icon: '✅', title: 'Do', desc: 'Follow best practices' },
+          { icon: '❌', title: "Don't", desc: 'Avoid common mistakes' }
         ];
         content.bgType = 'video';
         break;
-
       case 'cards4':
         content.cards = [
           { icon: '🎯', title: 'Focus', desc: 'Clear objectives' },
@@ -339,13 +411,221 @@ export class AIController {
         ];
         content.bgType = 'image';
         break;
-
+      case 'half-left':
+      case 'half-right':
+        content.body = `Understanding ${subtopic} is crucial for success in your role.`;
+        content.bullets = [
+          'Key principle to master',
+          'Apply in daily situations',
+          'Continuous improvement'
+        ];
+        content.bgType = 'image';
+        break;
+      case 'third-sidebar':
+        content.body = `${subtopic} forms the foundation of effective practice.`;
+        content.bullets = [
+          'Understand the basics',
+          'Practice consistently',
+          'Measure your progress'
+        ];
+        content.bgType = 'image';
+        break;
       default:
         content.body = 'Essential knowledge for professional success.';
         content.bgType = 'video';
     }
 
     return content;
+  }
+
+  /**
+   * Get a random gradient for background
+   */
+  private getRandomGradient(): string {
+    const gradients = [
+      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+      'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+      'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'
+    ];
+    return gradients[Math.floor(Math.random() * gradients.length)];
+  }
+
+  /**
+   * Internal method to generate MCQ questions (no req/res dependencies)
+   */
+  private async _generateMCQsInternal(
+    projectId: string,
+    content: string,
+    quizCount: number,
+    courseName: string,
+    client?: any
+  ) {
+    console.log(`📝 Generating ${quizCount} MCQ questions for project ${projectId}`);
+    
+    // Create prompt for Claude to generate MCQs
+    const prompt = `You are an expert instructional designer creating assessment questions for a corporate training video.
+
+Video Title: "${courseName || 'Training Video'}"
+Video Content Summary:
+${content}
+
+Generate exactly ${quizCount} multiple-choice questions to test learner understanding of this content.
+
+REQUIREMENTS:
+1. Questions should test key concepts, not trivial details
+2. Each question must have exactly 4 options (A, B, C, D)
+3. Only ONE option should be correct
+4. Provide clear explanations for why the correct answer is right
+5. Vary difficulty: ${quizCount <= 5 ? 'medium' : 'mix of easy, medium, and hard'}
+6. Questions should be practical and scenario-based when possible
+
+Respond with ONLY valid JSON in this exact format (no markdown, no code blocks):
+{
+  "questions": [
+    {
+      "question": "What is the primary purpose of...",
+      "options": [
+        {"id": "A", "text": "First option text", "is_correct": false},
+        {"id": "B", "text": "Second option text", "is_correct": true},
+        {"id": "C", "text": "Third option text", "is_correct": false},
+        {"id": "D", "text": "Fourth option text", "is_correct": false}
+      ],
+      "explanation": "The correct answer is B because...",
+      "difficulty": "medium"
+    }
+  ]
+}`;
+
+    // Call Claude API
+    const mcqData = await claudeService.generateContent(prompt);
+    
+    // Parse response
+    let parsedData;
+    try {
+      const cleanedText = mcqData
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      
+      parsedData = JSON.parse(cleanedText);
+    } catch (parseError) {
+      console.error('❌ Failed to parse MCQ response:', mcqData);
+      throw new Error('Invalid JSON response from AI');
+    }
+
+    // Validate response structure
+    if (!parsedData.questions || !Array.isArray(parsedData.questions)) {
+      throw new Error('Invalid MCQ response structure');
+    }
+
+    // Use transaction client if provided, otherwise use pool
+    const db = client || pool;
+
+    // Insert MCQ scenes into database
+    const insertedScenes = [];
+    
+    // ADD QUIZ TRANSITION SCENE FIRST (scene 999)
+console.log('📝 Inserting quiz transition scene...');
+const transitionResult = await db.query(
+  `INSERT INTO scenes 
+   (project_id, scene_number, scene_type, title, body, layout, bg_type, gradient, created_at, updated_at)
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+   RETURNING *`,
+  [
+    projectId,
+    999,
+    'quiz_transition',
+    'Ready to Test Your Knowledge?',
+    `Let's see how much you've learned! This quiz has ${quizCount} questions.`,
+    'centered',
+    'gradient',
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+  ]
+);
+insertedScenes.push(transitionResult.rows[0]);
+
+    for (let i = 0; i < parsedData.questions.length; i++) {
+      const question = parsedData.questions[i];
+      
+      // Validate each question
+      if (!question.options || question.options.length !== 4) {
+        console.error(`⚠️ Question ${i + 1} doesn't have exactly 4 options, skipping`);
+        continue;
+      }
+
+      const correctCount = question.options.filter((opt: any) => opt.is_correct).length;
+      if (correctCount !== 1) {
+        console.error(`⚠️ Question ${i + 1} doesn't have exactly 1 correct answer, skipping`);
+        continue;
+      }
+
+      // Insert quiz scene
+      const result = await db.query(
+        `INSERT INTO scenes 
+         (project_id, scene_number, scene_type, title, body, quiz_data, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+         RETURNING *`,
+        [
+          projectId,
+          1000 + i, // Scene numbers 1000+ for quiz questions
+          'quiz_mcq',
+          `Question ${i + 1} of ${quizCount}`,
+          question.question,
+          JSON.stringify(question)
+        ]
+      );
+
+      insertedScenes.push(result.rows[0]);
+    }
+
+    console.log(`✅ Successfully generated and inserted ${insertedScenes.length} MCQ questions`);
+    
+    return {
+      success: true,
+      scenes: insertedScenes,
+      quizCount: insertedScenes.length
+    };
+  }
+
+  /**
+   * HTTP endpoint to generate MCQ questions
+   */
+  async generateMCQs(req: Request, res: Response) {
+    try {
+      const { projectId, content, quizCount, courseName } = req.body;
+      
+      if (!projectId || !content || !quizCount) {
+        return res.status(400).json({
+          error: 'projectId, content, and quizCount are required'
+        });
+      }
+
+      const result = await this._generateMCQsInternal(
+        projectId,
+        content,
+        quizCount,
+        courseName
+      );
+
+      res.json({
+        success: true,
+        message: `Generated ${result.quizCount} quiz questions`,
+        scenes: result.scenes,
+        quizCount: result.quizCount
+      });
+
+    } catch (error: any) {
+      console.error('❌ Generate MCQs error:', error);
+      res.status(500).json({
+        error: 'Failed to generate MCQ questions',
+        message: error.message
+      });
+    }
   }
 }
 

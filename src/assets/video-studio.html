@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flipick Video Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#444ce7;--primary-light:#849bff;--primary-bg:#eef0ff;--gray-dark:#545454;--gray-mid:#7b8fa2;--gray-light:#aaabab;--gray-border:#e2e4e9;--bg-white:#fff;--bg-light:#f8f9fb;--bg-page:#f0f2f5;--success:#10b981;--font-display:'Playfair Display',Georgia,serif;--font-body:'Inter',system-ui,sans-serif;--font-mono:'Space Mono',monospace;--header-height:60px}
+html{overflow:hidden;height:100vh}
+body{font-family:var(--font-body);background:var(--bg-page);color:#1a1a1a;height:100vh;overflow:hidden}
+.header{background:var(--bg-white);border-bottom:1px solid var(--gray-border);padding:0.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;height:var(--header-height)}
+.logo{display:flex;align-items:center;gap:0.5rem;font-weight:600;font-size:1rem}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.8rem}
+.status-row{display:flex;gap:0.75rem}
+.status-pill{display:flex;align-items:center;gap:0.3rem;padding:0.3rem 0.6rem;background:var(--bg-light);border-radius:99px;font-size:0.7rem}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--gray-light)}
+.status-dot.on{background:var(--success)}
+.main{max-width:1600px;margin:0 auto;padding:1.5rem;display:grid;grid-template-columns:360px 1fr;gap:1.5rem;height:calc(100vh - var(--header-height));overflow-y:auto}
+.sidebar{display:flex;flex-direction:column;gap:1rem;max-height:100%;overflow-y:auto}
+
+/* When sidebar is hidden (view mode), center the player */
+.main:has(.sidebar[style*="display: none"]) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.main:has(.sidebar[style*="display: none"]) .player-wrapper {
+  max-width: min(1200px, calc((100vh - var(--header-height) - 140px) * 16 / 9));
+  max-height: calc(100vh - var(--header-height) - 140px);
+  /* Accounts for: header (60px) + controls (60px) + padding (20px) */
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.card{background:var(--bg-white);border-radius:10px;border:1px solid var(--gray-border)}
+.card-header{padding:0.75rem 1rem;border-bottom:1px solid var(--gray-border);display:flex;justify-content:space-between;align-items:center}
+.card-title{font-weight:600;font-size:0.85rem}
+.card-step{font-size:0.65rem;font-weight:600;color:var(--primary);background:var(--primary-bg);padding:0.2rem 0.5rem;border-radius:99px}
+.card-body{padding:1rem}
+.form-group{margin-bottom:0.75rem}
+.form-group:last-child{margin-bottom:0}
+.form-label{display:block;font-size:0.75rem;font-weight:500;color:var(--gray-dark);margin-bottom:0.4rem}
+.form-input,.form-select{width:100%;padding:0.5rem 0.7rem;background:var(--bg-light);border:1px solid var(--gray-border);border-radius:5px;font-size:0.8rem;font-family:var(--font-body);color:#1a1a1a}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--primary)}
+textarea.form-input{min-height:60px;resize:vertical}
+.select-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem}
+.select-option{padding:0.5rem;background:var(--bg-light);border:2px solid transparent;border-radius:5px;text-align:center;font-size:0.7rem;color:var(--gray-dark);cursor:pointer;transition:all 0.15s}
+.select-option:hover{background:var(--primary-bg);color:var(--primary)}
+.select-option.selected{background:var(--primary-bg);border-color:var(--primary);color:var(--primary);font-weight:500}
+.tabs{display:flex;border-bottom:2px solid var(--gray-border);margin-bottom:1rem}
+.tab{padding:0.5rem 1rem;font-size:0.75rem;font-weight:500;color:var(--gray-mid);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.15s}
+.tab:hover{color:var(--primary)}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.topics-list{border:1px solid var(--gray-border);border-radius:5px;max-height:180px;overflow-y:auto}
+.topic-item{padding:0.5rem 0.75rem;border-bottom:1px solid var(--gray-border);display:flex;align-items:center;gap:0.4rem;font-size:0.8rem}
+.topic-item:last-child{border-bottom:none}
+.topic-item.sub{padding-left:1.5rem;background:var(--bg-light);font-size:0.75rem}
+.btn{display:flex;align-items:center;justify-content:center;gap:0.4rem;padding:0.6rem 1rem;font-size:0.8rem;font-weight:500;border-radius:5px;border:none;cursor:pointer;font-family:var(--font-body);transition:all 0.15s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#3538c9}
+.btn-secondary{background:var(--bg-light);color:var(--gray-dark);border:1px solid var(--gray-border)}
+.btn-secondary:hover{background:var(--gray-border)}
+.btn-full{width:100%}
+.btn-lg{padding:0.75rem 1.25rem;font-size:0.85rem}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.color-picker-row{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem}
+.color-swatch{width:28px;height:28px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
+.color-swatch:hover,.color-swatch.selected{border-color:var(--primary);transform:scale(1.1)}
+.logo-upload{display:flex;align-items:center;gap:0.75rem}
+.logo-preview{width:40px;height:40px;border-radius:6px;background:var(--bg-light);display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--gray-border)}
+.logo-preview img{max-width:100%;max-height:100%;object-fit:contain}
+.logo-upload input[type="file"]{display:none}
+.voice-status{font-size:0.7rem;color:var(--gray-mid);margin-top:0.4rem}
+.voice-status.ready{color:var(--success)}
+.voice-status.error{color:#ef4444}
+.voice-status.warning{color:#f59e0b}
+.player-wrapper{
+  position:relative;
+  width:100%;
+  max-width:min(1200px, calc((100vh - var(--header-height) - 2rem) * 16 / 9));
+  margin:0 auto;
+  background:#000;
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,0.3);
+}
+
+.player-aspect{
+  position:relative;
+  width:100%;
+  padding-top:56.25%; /* 16:9 aspect ratio */
+}
+
+.player-content{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+}
+.viewport{width:100%;height:100%;position:relative;overflow:hidden}
+.empty-state{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;z-index:5}
+.empty-icon{font-size:2.5rem;margin-bottom:0.75rem;opacity:0.5}
+.empty-title{font-size:1rem;font-weight:600}
+.empty-text{font-size:0.8rem;color:rgba(255,255,255,0.6)}
+.loading{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:30}
+.loading.active{display:flex}
+.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--primary-light);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{margin-top:0.75rem;font-size:0.8rem;color:rgba(255,255,255,0.7)}
+.big-play-overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:none;align-items:center;justify-content:center;z-index:20;cursor:pointer;background:rgba(0,0,0,0.4)}
+.big-play-overlay.visible{display:flex}
+.big-play-btn{width:88px;height:88px;background:rgba(255,255,255,0.95);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 40px rgba(0,0,0,0.5);transition:transform 0.2s}
+.big-play-overlay:hover .big-play-btn{transform:scale(1.1)}
+.big-play-btn svg{width:36px;height:36px;fill:var(--primary);margin-left:6px}
+.video-logo{position:absolute;top:20px;right:20px;z-index:15;opacity:0.9}
+.video-logo img{max-height:40px;max-width:120px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5))}
+.audio-indicator{position:absolute;top:20px;left:20px;z-index:15;display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.75rem;background:rgba(0,0,0,0.6);border-radius:20px;font-size:0.7rem;color:#fff;opacity:0;transition:opacity 0.3s}
+.audio-indicator.active{opacity:1}
+.audio-indicator svg{width:14px;height:14px}
+.scene{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;visibility:hidden;transition:all 0.8s ease;display:flex;flex-direction:column}
+.scene.active{opacity:1;visibility:visible}
+.scene-bg{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden}
+.scene-bg video,.scene-bg img{width:100%;height:100%;object-fit:cover;animation:kb 20s ease infinite alternate}
+.scene-bg-gradient{width:100%;height:100%}
+@keyframes kb{0%{transform:scale(1.05)}50%{transform:scale(1.1)}100%{transform:scale(1.08)}}
+.scene-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.7) 30%,rgba(0,0,0,0.4) 60%,rgba(0,0,0,0.3) 100%)}
+.scene-vignette{position:absolute;top:0;left:0;width:100%;height:100%;box-shadow:inset 0 0 200px rgba(0,0,0,0.8);pointer-events:none}
+.scene-content{position:absolute;top:auto;bottom:10%;left:5%;right:5%;color:#fff;z-index:10;max-height:80%;overflow-y:auto;overflow-x:hidden;padding-bottom:2rem;scrollbar-width:thin;scrollbar-color:rgba(68,76,231,0.5) rgba(0,0,0,0.3)}
+.scene-content::-webkit-scrollbar{width:6px}
+.scene-content::-webkit-scrollbar-track{background:rgba(0,0,0,0.3);border-radius:3px}
+.scene-content::-webkit-scrollbar-thumb{background:rgba(68,76,231,0.5);border-radius:3px}
+.scene-content::-webkit-scrollbar-thumb:hover{background:rgba(68,76,231,0.7)}
+.scene-content.centered{left:50%;right:auto;transform:translateX(-50%);text-align:center;display:flex;flex-direction:column;align-items:center;max-width:800px;width:90%}
+.scene-content.quiz-scene{position:absolute;top:0;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;max-height:100%}
+.scene-eyebrow{font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--primary-light);margin-bottom:0.6rem;text-shadow:0 2px 10px rgba(0,0,0,0.8)}
+.scene-title{font-family:var(--font-display);font-size:clamp(1.5rem,4vw,2.8rem);font-weight:600;line-height:1.15;margin-bottom:0.5rem;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,0.9)}
+.scene-subtitle{font-family:var(--font-display);font-size:clamp(1rem,2vw,1.4rem);color:var(--primary-light);margin-bottom:0.4rem;font-style:italic;text-shadow:0 2px 10px rgba(0,0,0,0.8)}
+.scene-body{font-family:var(--font-body);font-size:0.9rem;line-height:1.7;color:rgba(255,255,255,0.95);max-width:600px;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+.decision-text-container{display:flex;flex-direction:column;gap:1rem}
+.scene-bullets{list-style:none;margin-top:0.75rem}
+.scene-bullets li{padding:0.4rem 0 0.4rem 1.5rem;position:relative;font-size:0.85rem;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+.scene-bullets li:before{content:"";position:absolute;left:0;top:0.7rem;width:8px;height:8px;background:var(--primary-light);border-radius:50%;box-shadow:0 0 12px var(--primary-light)}
+.scene-cards{display:grid;gap:0.75rem;margin-top:1rem}
+.scene-cards.cols-2{grid-template-columns:1fr 1fr;max-width:700px}
+.scene-cards.cols-3{grid-template-columns:1fr 1fr 1fr;max-width:900px}
+.scene-card{background:rgba(0,0,0,0.5);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:1rem}
+.scene-card-icon{font-size:1.5rem;margin-bottom:0.5rem}
+.scene-card-title{font-size:0.85rem;font-weight:600;color:#fff;margin-bottom:0.3rem}
+.scene-card-desc{font-size:0.75rem;color:rgba(255,255,255,0.85);line-height:1.5}
+.scene-iconlist{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;max-width:700px}
+.scene-iconitem{display:flex;gap:0.75rem;align-items:flex-start}
+.scene-iconitem-icon{font-size:1.8rem}
+.scene-iconitem-title{font-size:0.85rem;font-weight:600;color:#fff;margin-bottom:0.2rem;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+.scene-iconitem-desc{font-size:0.75rem;color:rgba(255,255,255,0.85);text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+.scene-timeline{margin-top:1rem;max-width:600px}
+.timeline-item{display:flex;gap:1rem;padding:0.6rem 0;border-left:2px solid rgba(132,155,255,0.5);padding-left:1.25rem;margin-left:0.5rem;position:relative}
+.timeline-item:before{content:"";position:absolute;left:-6px;top:0.8rem;width:10px;height:10px;background:var(--primary-light);border-radius:50%;box-shadow:0 0 15px var(--primary-light)}
+.timeline-year{font-family:var(--font-mono);font-size:0.75rem;font-weight:600;color:var(--primary-light);min-width:60px;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+.timeline-event{font-size:0.8rem;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+.scene-stat{text-align:center;padding:1.5rem 0}
+.scene-stat-value{font-family:var(--font-display);font-size:clamp(3rem,10vw,6rem);font-weight:700;background:linear-gradient(135deg,#fff 0%,var(--primary-light) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.scene-stat-label{font-size:1rem;color:#fff;margin-top:0.5rem;text-shadow:0 2px 10px rgba(0,0,0,0.8)}
+.scene-quote-wrapper{max-width:650px;text-align:center;padding:1rem}
+.scene-quote{font-family:var(--font-display);font-size:clamp(1.2rem,2.5vw,1.6rem);font-style:italic;line-height:1.6;color:#fff;position:relative;padding:0 2rem;text-shadow:0 3px 15px rgba(0,0,0,0.8)}
+.scene-quote:before,.scene-quote:after{font-size:4rem;color:var(--primary-light);opacity:0.5;position:absolute;font-family:Georgia,serif}
+.scene-quote:before{content:'"';top:-1.5rem;left:-0.5rem}
+.scene-quote:after{content:'"';bottom:-2.5rem;right:-0.5rem}
+.scene-quote-author{font-size:0.85rem;color:var(--primary-light);margin-top:1.25rem;letter-spacing:0.1em;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+.scene-split{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;position:absolute;top:0;left:0;right:0;bottom:0;padding:5%}
+.scene-split-content{padding:1rem}
+.scene-split-content .scene-title{font-size:clamp(1.3rem,3vw,2rem);margin-bottom:0.75rem;color:#fff}
+.scene-split-content .scene-body{font-size:0.85rem;color:#fff}
+.scene-split-image{border-radius:12px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,0.5)}
+.scene-split-image img{width:100%;height:auto;display:block}
+
+/* Half-Left Layout - Image fills left 50% */
+.layout-half-left{display:grid;grid-template-columns:1fr 1fr;position:absolute;top:0;left:0;right:0;bottom:0}
+.layout-half-left .half-media{position:relative;overflow:hidden}
+.layout-half-left .half-media img,.layout-half-left .half-media video{width:100%;height:100%;object-fit:cover}
+.layout-half-left .half-content{display:flex;flex-direction:column;justify-content:center;padding:5%;background:linear-gradient(135deg,rgba(30,27,75,0.95),rgba(49,46,129,0.95));overflow-y:auto;overflow-x:hidden;max-height:100%}
+.layout-half-left .half-content .scene-eyebrow{font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--primary-light);margin-bottom:0.6rem}
+.layout-half-left .half-content .scene-title{font-family:var(--font-display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:600;line-height:1.2;margin-bottom:0.75rem;color:#fff}
+.layout-half-left .half-content .scene-body{font-family:var(--font-body);font-size:0.9rem;line-height:1.7;color:rgba(255,255,255,0.9);max-width:500px}
+.layout-half-left .half-content .scene-bullets{list-style:none;margin-top:0.75rem}
+.layout-half-left .half-content .scene-bullets li{padding:0.4rem 0 0.4rem 1.5rem;position:relative;font-size:0.85rem;color:#fff}
+.layout-half-left .half-content .scene-bullets li:before{content:"";position:absolute;left:0;top:0.7rem;width:8px;height:8px;background:var(--primary-light);border-radius:50%}
+
+/* Half-Right Layout - Image fills right 50% */
+.layout-half-right{display:grid;grid-template-columns:1fr 1fr;position:absolute;top:0;left:0;right:0;bottom:0}
+.layout-half-right .half-content{display:flex;flex-direction:column;justify-content:center;padding:5%;background:linear-gradient(135deg,rgba(30,27,75,0.95),rgba(49,46,129,0.95));overflow-y:auto;overflow-x:hidden;max-height:100%}
+.layout-half-right .half-content .scene-eyebrow{font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--primary-light);margin-bottom:0.6rem}
+.layout-half-right .half-content .scene-title{font-family:var(--font-display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:600;line-height:1.2;margin-bottom:0.75rem;color:#fff}
+.layout-half-right .half-content .scene-body{font-family:var(--font-body);font-size:0.9rem;line-height:1.7;color:rgba(255,255,255,0.9);max-width:500px}
+.layout-half-right .half-content .scene-bullets{list-style:none;margin-top:0.75rem}
+.layout-half-right .half-content .scene-bullets li{padding:0.4rem 0 0.4rem 1.5rem;position:relative;font-size:0.85rem;color:#fff}
+.layout-half-right .half-content .scene-bullets li:before{content:"";position:absolute;left:0;top:0.7rem;width:8px;height:8px;background:var(--primary-light);border-radius:50%}
+.layout-half-right .half-media{position:relative;overflow:hidden}
+.layout-half-right .half-media img,.layout-half-right .half-media video{width:100%;height:100%;object-fit:cover}
+
+/* Third-Sidebar Layout - Image in 1/3 sidebar */
+.layout-third-sidebar{display:grid;grid-template-columns:1fr 2fr;position:absolute;top:0;left:0;right:0;bottom:0}
+.layout-third-sidebar .sidebar-media{position:relative;overflow:hidden}
+.layout-third-sidebar .sidebar-media img,.layout-third-sidebar .sidebar-media video{width:100%;height:100%;object-fit:cover}
+.layout-third-sidebar .sidebar-content{display:flex;flex-direction:column;justify-content:center;padding:5%;background:linear-gradient(135deg,rgba(30,27,75,0.95),rgba(49,46,129,0.95));overflow-y:auto;overflow-x:hidden;max-height:100%}
+.layout-third-sidebar .sidebar-content .scene-eyebrow{font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.25em;text-transform:uppercase;color:var(--primary-light);margin-bottom:0.6rem}
+.layout-third-sidebar .sidebar-content .scene-title{font-family:var(--font-display);font-size:clamp(1.5rem,3vw,2.2rem);font-weight:600;line-height:1.2;margin-bottom:0.75rem;color:#fff}
+.layout-third-sidebar .sidebar-content .scene-body{font-family:var(--font-body);font-size:0.9rem;line-height:1.7;color:rgba(255,255,255,0.9)}
+.layout-third-sidebar .sidebar-content .scene-bullets{list-style:none;margin-top:0.75rem}
+.layout-third-sidebar .sidebar-content .scene-bullets li{padding:0.4rem 0 0.4rem 1.5rem;position:relative;font-size:0.85rem;color:#fff}
+.layout-third-sidebar .sidebar-content .scene-bullets li:before{content:"";position:absolute;left:0;top:0.7rem;width:8px;height:8px;background:var(--primary-light);border-radius:50%}
+.intro-template,.closing-template{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:10}
+.intro-template-content,.closing-template-content{text-align:center;max-width:80%;max-height:90vh;overflow-y:auto;overflow-x:hidden;padding:2rem 1rem}
+.intro-logo{margin-bottom:1.5rem}
+.intro-logo img{max-height:60px;max-width:200px;object-fit:contain;filter:drop-shadow(0 4px 20px rgba(0,0,0,0.5))}
+.intro-divider{width:60px;height:3px;background:var(--primary-light);margin:1rem auto}
+.closing-cta{margin-top:1.5rem;padding:0.75rem 2rem;background:var(--primary);color:#fff;border-radius:30px;font-size:0.9rem;font-weight:600;display:inline-block;box-shadow:0 10px 30px rgba(68,76,231,0.4)}
+.controls{background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.6) 60%,transparent 100%);position:absolute;bottom:0;left:0;right:0;padding:2rem 1.25rem 1rem;opacity:0;transition:opacity 0.3s}
+.player-wrapper:hover .controls,.player-wrapper.paused .controls{opacity:1}
+.scrubber{position:relative;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;cursor:pointer;margin-bottom:1rem}
+.scrubber:hover{height:6px}
+.scrubber-progress{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));border-radius:2px;pointer-events:none}
+.ctrl-row{display:flex;align-items:center;gap:0.75rem}
+.ctrl-left{display:flex;align-items:center;gap:0.75rem}
+.ctrl-center{flex:1;display:flex;justify-content:center;gap:0.25rem}
+.ctrl-right{display:flex;align-items:center;gap:0.5rem}
+.ctrl-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;border-radius:6px;color:rgba(255,255,255,0.7);cursor:pointer}
+.ctrl-btn:hover{color:#fff;background:rgba(255,255,255,0.1)}
+.ctrl-btn.play{width:44px;height:44px;background:var(--primary);color:#fff;border-radius:50%}
+.ctrl-btn.play:hover{background:var(--primary-light)}
+.ctrl-btn svg{width:16px;height:16px}
+.ctrl-btn.play svg{width:20px;height:20px}
+.time{font-family:var(--font-mono);font-size:0.7rem;color:rgba(255,255,255,0.7)}
+.chapter-indicator{font-size:0.7rem;color:rgba(255,255,255,0.6);padding:0.25rem 0.5rem;background:rgba(255,255,255,0.1);border-radius:4px}
+.speed-control,.volume-control{position:relative}
+.speed-btn{font-family:var(--font-mono);font-size:0.7rem;padding:0.25rem 0.5rem;background:rgba(255,255,255,0.1);border:none;border-radius:4px;color:rgba(255,255,255,0.7);cursor:pointer}
+.speed-menu,.volume-menu{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:0.5rem;background:rgba(20,20,20,0.95);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.25rem;display:none;min-width:60px}
+.speed-menu.active,.volume-menu.active{display:block}
+.speed-option{display:block;width:100%;padding:0.4rem 0.5rem;background:none;border:none;color:rgba(255,255,255,0.7);font-size:0.7rem;font-family:var(--font-mono);cursor:pointer;text-align:center;border-radius:4px}
+.speed-option:hover,.speed-option.active{background:var(--primary);color:#fff}
+.volume-slider{width:80px;padding:0.5rem}
+.volume-slider input{width:100%;cursor:pointer}
+@media(max-width:1100px){.main{grid-template-columns:1fr}.sidebar{max-height:none}}
+.decision-btn{padding:1rem 1.25rem;background:rgba(255,255,255,0.95);border:2px solid var(--primary);border-radius:10px;font-size:0.9rem;font-weight:500;cursor:pointer;transition:all 0.3s;text-align:left;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.decision-btn:hover{background:var(--primary);color:#fff;transform:translateY(-3px);box-shadow:0 6px 20px rgba(68,76,231,0.4)}
+
+/* Quiz Styles */
+
+.quiz-container {
+  max-width: 800px;
+  padding: 1rem;
+  position: absolute;
+  top: 5%;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  z-index: 100;
+  width: 85%;
+}
+
+.quiz-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.quiz-progress {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.quiz-question {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: white;
+  line-height: 1.4;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+.quiz-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.quiz-option {
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.quiz-option:hover:not(:disabled) {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.4);
+  transform: translateY(-2px);
+}
+
+.quiz-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.quiz-option.correct {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgb(34, 197, 94);
+}
+
+.quiz-option.incorrect {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgb(239, 68, 68);
+}
+
+.quiz-option-letter {
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
+  flex-shrink: 0;
+}
+
+.quiz-option.correct .quiz-option-letter {
+  background: rgb(34, 197, 94);
+}
+
+.quiz-option.incorrect .quiz-option-letter {
+  background: rgb(239, 68, 68);
+}
+
+.quiz-option-text {
+  font-size: 0.9rem;
+  color: white;
+  line-height: 1.4;
+}
+
+.quiz-explanation {
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.quiz-explanation-content {
+  color: white;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.quiz-next-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.quiz-next-btn:hover {
+  background: #3538c9;
+}
+.quiz-summary {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 100;
+  width: 90%;
+  max-width: 450px;
+  padding: 1rem;
+}
+
+.quiz-summary-icon {
+  font-size: 4rem;
+  margin-bottom: 0.75rem;
+}
+
+.quiz-summary-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.25rem;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+}
+
+.quiz-summary-subtitle {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 1rem;
+}
+
+.quiz-score-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: 4px solid var(--primary-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.quiz-score-percent {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+
+.quiz-score-label {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.7);
+  margin-top: 0.25rem;
+}
+
+.quiz-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.quiz-stat {
+  text-align: center;
+}
+
+.quiz-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+.quiz-stat-value.correct {
+  color: rgb(34, 197, 94);
+}
+
+.quiz-stat-value.incorrect {
+  color: rgb(239, 68, 68);
+}
+
+.quiz-stat-label {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.7);
+  margin-top: 0.25rem;
+}
+
+.quiz-message {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+}
+
+.quiz-summary-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.quiz-summary-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.quiz-summary-btn.primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+}
+
+.quiz-summary-btn.primary:hover {
+  background: #3538c9;
+}
+
+.quiz-summary-btn.secondary {
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.quiz-summary-btn.secondary:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Improved Scenario Layout */
+.scene-split-layout {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  padding: 6% 4% 4% 4%;
+  align-items: start;
+  z-index: 15;
+  overflow: hidden;
+}
+
+.decision-text-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-right: 2rem;
+  max-height: 100%;
+  overflow-y: auto;
+  padding-bottom: 2rem;
+}
+
+.decision-text-container .scene-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--primary-light);
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+.decision-text-container .scene-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+}
+
+.decision-text-container .scene-body {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+/* Decision buttons container */
+.decision-buttons {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  padding-bottom: 2rem;
+  z-index: 15;
+}
+
+/* Custom scrollbar for decision containers */
+.decision-text-container::-webkit-scrollbar,
+.decision-buttons::-webkit-scrollbar {
+  width: 8px;
+}
+
+.decision-text-container::-webkit-scrollbar-track,
+.decision-buttons::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+
+.decision-text-container::-webkit-scrollbar-thumb,
+.decision-buttons::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.3);
+  border-radius: 4px;
+}
+
+.decision-text-container::-webkit-scrollbar-thumb:hover,
+.decision-buttons::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.5);
+}
+
+/* Scenario Start Button (for first screen) */
+.scenario-start-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 200;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.scenario-start-container .scene-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--primary-light);
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  text-align: center;
+}
+
+.scenario-start-container .scene-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  margin-bottom: 1rem;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+  text-align: center;
+}
+
+.scenario-start-container .scene-body {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.95);
+  margin-bottom: 2rem;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  text-align: center;
+}
+
+.scenario-start-btn {
+  padding: 1rem 3rem;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 10px 30px rgba(68,76,231,0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 201;
+  position: relative;
+}
+
+.scenario-start-btn:hover {
+  background: #3538c9;
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(68,76,231,0.5);
+}
+
+.scenario-start-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+
+/* Quiz Transition Scene */
+.quiz-transition-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 200;
+  width: 90%;
+  max-width: 650px;
+  max-height: 90vh;
+  padding: 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.quiz-transition-container .scene-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--primary-light);
+  margin-bottom: 1.5rem;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+.quiz-transition-container .scene-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+}
+
+.quiz-transition-container .scene-body {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.95);
+  margin-bottom: 2.5rem;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+
+
+.player-wrapper.interactive .controls {opacity: 0 !important; pointer-events: none}
+
+/* Scenario Mode - Hide video controls */
+.player-wrapper.scenario-mode .controls {
+  display: none !important;
+}
+
+.player-wrapper.scenario-mode .audio-indicator {
+  display: none !important;
+}
+
+.player-wrapper.scenario-mode .video-logo {
+  display: none !important;
+}
+</style>
+</head>
+<body>
+<header class="header">
+<a href="/" style="text-decoration: none; color: inherit;"><div class="logo"><div class="logo-icon" id="headerLogoIcon">F</div><span id="headerLogoText">Flipick <span style="color:var(--primary)">Video</span></span></div></a>
+<a href="/projects" style="margin-right:1rem;color:var(--gray-dark);text-decoration:none;font-size:0.85rem;font-weight:500;">My Projects</a>
+<a href="#" id="editScenesLink" onclick="editScenes(); return false;" style="margin-right:1rem;padding:0.5rem 1rem;background:var(--primary);color:white;text-decoration:none;font-size:0.85rem;font-weight:500;border-radius:6px;display:none;">✏️ Edit Scenes</a>
+</div>
+</header>
+<main class="main">
+<div class="sidebar">
+<div class="card">
+<div class="card-header"><div class="card-title">Course Setup</div><div class="card-step">Step 1</div></div>
+<div class="card-body">
+<div class="form-group"><label class="form-label">Project Name</label><input type="text" class="form-input" id="subject" placeholder="e.g. Workplace Harassment Prevention"></div>
+<div class="form-group"><label class="form-label">Context (Optional)</label><textarea class="form-input" id="context" placeholder="Target audience, focus areas..."></textarea></div>
+<div class="form-group"><label class="form-label">Training Type</label><div class="select-grid" id="typeGrid"></div></div>
+</div>
+</div>
+<div class="card">
+<div class="card-header"><div class="card-title">Topics</div><div class="card-step">Step 2</div></div>
+<div class="card-body">
+<div class="tabs">
+<div class="tab active" data-tab="ai">AI Generated</div>
+<div class="tab" data-tab="paste">Paste Your Own</div>
+</div>
+<div class="tab-content active" id="tab-ai">
+<div class="form-group" style="margin-bottom:0.75rem"><label class="form-label">Number of Scenes</label><input type="number" class="form-input" id="sceneCount" value="15" min="5" max="50" style="width:80px"></div>
+<button class="btn btn-primary btn-full" id="btnGenTopics" style="margin-bottom:1rem">Generate Topics from PDF</button>
+<div class="topics-list" id="topicsList"><div style="padding:1.5rem;text-align:center;color:var(--gray-mid);font-size:0.8rem">Click "Generate Topics" above</div></div>
+</div>
+<div class="tab-content" id="tab-paste">
+<textarea class="form-input" id="customTopics" placeholder="Topic: Bank Deposits&#10;Subtopic: Demand Deposits&#10;Subtopic: Term Deposits&#10;&#10;Topic: Current Account Operations&#10;Subtopic: Opening Requirements&#10;Subtopic: Transaction Features" style="min-height:140px"></textarea>
+<button class="btn btn-secondary btn-full" style="margin-top:0.5rem" id="btnParseTopics">Use These Topics</button>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header"><div class="card-title">Branding</div><div class="card-step">Step 3</div></div>
+<div class="card-body">
+<div class="form-group"><label class="form-label">Company Logo</label><div class="logo-upload"><div class="logo-preview" id="logoPreview"><span style="color:var(--gray-light);font-size:0.7rem">No logo</span></div><label class="btn btn-primary" style="flex:1">Upload Logo<input type="file" id="logoInput" accept="image/*"></label></div></div>
+<div class="form-group">
+<label class="form-label">Brand Color</label>
+<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+<input type="color" id="brandColorPicker" value="#444ce7" style="width:36px;height:36px;border:2px solid var(--gray-border);border-radius:6px;cursor:pointer;padding:2px" title="Pick your brand color">
+<input type="text" id="brandColorHex" value="#444ce7" placeholder="#444ce7" maxlength="7" style="width:90px;padding:0.4rem 0.5rem;background:var(--bg-light);border:1px solid var(--gray-border);border-radius:5px;font-size:0.75rem;font-family:var(--font-mono)" title="Enter hex code">
+</div>
+<div class="color-picker-row" id="colorPicker"></div>
+<div style="display:flex;gap:0.3rem;margin-top:0.5rem" id="themePreview"></div>
+</div>
+</div>
+</div>
+<button class="btn btn-primary btn-lg btn-full" id="btnGenVideo" style="margin-bottom:1rem">Generate Video</button>
+<div class="card">
+<div class="card-header"><div class="card-title">Voice-Over</div><div class="card-step">Step 4</div></div>
+<div class="card-body">
+<div class="form-group"><label class="form-label">Select Voice</label><select class="form-select" id="voiceSelect"><option value="">Loading voices...</option></select><div class="voice-status" id="voiceStatus">Checking voice services...</div></div>
+<button class="btn btn-primary btn-full" id="btnGenVoice" disabled>Generate Voice-Over</button>
+</div>
+</div>
+</div>
+<div class="player-wrapper" id="playerWrapper">
+<div class="player-aspect"><div class="player-content"><div class="viewport" id="viewport">
+<div class="loading" id="loader"><div class="spinner"></div><div class="loading-text">Generating...</div></div>
+<div class="empty-state" id="empty"><div class="empty-icon">🎬</div><div class="empty-title">Ready to Create</div><div class="empty-text">Configure and Generate</div></div>
+<div id="scenes"></div>
+<div class="video-logo" id="videoLogo" style="display:none"><img id="videoLogoImg" src="" alt=""></div>
+<div class="audio-indicator" id="audioIndicator"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg><span id="audioIndicatorText">Playing</span></div>
+<div class="big-play-overlay" id="bigPlayOverlay"><div class="big-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg></div></div>
+</div>
+<div class="controls">
+<div class="scrubber" id="scrubber"><div class="scrubber-progress" id="scrubberProgress" style="width:0%"></div></div>
+<div class="ctrl-row">
+<div class="ctrl-left"><div class="time"><span id="curTime">0:00</span> / <span id="totTime">0:00</span></div><div class="chapter-indicator" id="chapterIndicator">-</div></div>
+<div class="ctrl-center">
+<button class="ctrl-btn" id="btnRew"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg></button>
+<button class="ctrl-btn play" id="btnPlay"><svg viewBox="0 0 24 24" fill="currentColor" id="playIcon"><polygon points="5 3 19 12 5 21"/></svg></button>
+<button class="ctrl-btn" id="btnFwd"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg></button>
+</div>
+<div class="ctrl-right">
+<div class="volume-control"><button class="ctrl-btn" id="btnVolume"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button><div class="volume-menu" id="volumeMenu"><div class="volume-slider"><input type="range" id="volumeSlider" min="0" max="100" value="80"></div></div></div>
+<div class="speed-control"><button class="speed-btn" id="speedBtn">1x</button><div class="speed-menu" id="speedMenu"><button class="speed-option" data-speed="0.5">0.5x</button><button class="speed-option" data-speed="0.75">0.75x</button><button class="speed-option active" data-speed="1">1x</button><button class="speed-option" data-speed="1.5">1.5x</button><button class="speed-option" data-speed="2">2x</button></div></div>
+<button class="ctrl-btn" id="btnFS"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg></button>
+</div>
+</div>
+</div>
+</div></div>
+</div>
+</main>
+<audio id="audioPlayer" preload="auto"></audio>
+<script>
+var token = sessionStorage.getItem('token') || localStorage.getItem('token');
+if (!token) {
+  window.location.href = '/login';
+}
+var API = 'http://localhost:3000/api';
+var audioPlayer=null,volume=0.8,playbackSpeed=1;
+var topics=[],scenes=[],curScene=0,playing=false,videoReady=false;
+var types=["Compliance","Onboarding","Skills","Safety","Leadership","Product","Health"];
+var brandColors=["#444ce7","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899","#06b6d4","#84cc16"];
+var selectedColor="#444ce7",trainType="compliance",logoDataUrl=null;
+var generatedTheme=null;
+var voices=[],selectedVoice="";
+var sceneDurations=[];
+var sceneAudios=[];
+var hasVoiceOver=false;
+var projectId=null;
+var defaultDuration=6000;
+var gapDuration=1000;
+
+// Quiz tracking variables
+var quizAnswers = [];
+var quizCorrectCount = 0;
+var quizTotalCount = 0;
+var quizScenes = [];
+
+// Scenario tracking
+var isScenarioProject = false;
+
+// MCQ project tracking
+var isMCQProject = false;
+
+// Helper function to update chapter indicator
+function updateChapterIndicator(currentScene) {
+  var indicator = document.getElementById("chapterIndicator");
+  if (isScenarioProject) {
+    // For scenarios, just show current position (no total to avoid revealing structure)
+    indicator.textContent = "Scene " + (currentScene + 1);
+  } else {
+    // For regular videos, show scene X of Y
+    indicator.textContent = "Scene " + (currentScene + 1) + "/" + scenes.length;
+  }
+}
+
+document.addEventListener("DOMContentLoaded",init);
+
+function init(){
+  audioPlayer=document.getElementById("audioPlayer");
+  renderTypes();renderColorPicker();loadVoices();setupTabs();
+  
+ // Check if viewing an existing project
+  var params = new URLSearchParams(window.location.search);
+  var viewProjectId = params.get('id');
+  var mode = params.get('mode');
+  var source = params.get('source');
+  
+  if (viewProjectId) {
+    if (mode === 'create') {
+      // Load project but keep sidebar for creation
+      loadProjectForCreation(viewProjectId, source);
+      // Continue to set up buttons for creation mode
+    } else {
+      // Load existing project for viewing (hide sidebar)
+      loadProjectById(viewProjectId);
+      return; // Skip setting up creation buttons (VIEW MODE ONLY)
+    }
+  }
+  
+  document.getElementById("btnGenTopics").onclick=genTopics;
+  document.getElementById("btnParseTopics").onclick=parseCustomTopics;
+  document.getElementById("btnGenVideo").onclick=genVideo;
+  document.getElementById("btnGenVoice").onclick=genVoiceOver;
+  document.getElementById("btnPlay").onclick=togglePlay;
+  document.getElementById("bigPlayOverlay").onclick=togglePlay;
+  document.getElementById("btnRew").onclick=function(){goToScene(curScene-1)};
+  document.getElementById("btnFwd").onclick=function(){goToScene(curScene+1)};
+  document.getElementById("btnFS").onclick=toggleFS;
+  document.getElementById("scrubber").onclick=scrubberClick;
+  document.getElementById("speedBtn").onclick=function(){document.getElementById("speedMenu").classList.toggle("active")};
+  document.getElementById("btnVolume").onclick=function(){document.getElementById("volumeMenu").classList.toggle("active")};
+  document.getElementById("volumeSlider").oninput=function(e){volume=e.target.value/100;audioPlayer.volume=volume};
+  document.getElementById("logoInput").onchange=handleLogoUpload;
+  document.getElementById("voiceSelect").onchange=function(e){selectedVoice=e.target.value};
+  
+  document.querySelectorAll(".speed-option").forEach(function(el){
+    el.onclick=function(){
+      playbackSpeed=parseFloat(el.dataset.speed);
+      document.getElementById("speedBtn").textContent=el.textContent;
+      document.querySelectorAll(".speed-option").forEach(function(e){e.classList.remove("active")});
+      el.classList.add("active");
+      document.getElementById("speedMenu").classList.remove("active");
+      audioPlayer.playbackRate=playbackSpeed;
+    }
+  });
+  
+  document.onclick=function(e){
+    if(!e.target.closest(".speed-control"))document.getElementById("speedMenu").classList.remove("active");
+    if(!e.target.closest(".volume-control"))document.getElementById("volumeMenu").classList.remove("active");
+  };
+  
+  audioPlayer.onended=function(){
+    console.log("Audio ended for scene "+curScene);
+    document.getElementById("audioIndicator").classList.remove("active");
+    if(playing){
+      setTimeout(function(){
+        if(playing) nextScene();
+      }, gapDuration);
+    }
+  };
+  
+  audioPlayer.onplay=function(){document.getElementById("audioIndicator").classList.add("active")};
+  audioPlayer.onpause=function(){document.getElementById("audioIndicator").classList.remove("active")};
+  
+}
+
+function setupTabs(){
+  document.querySelectorAll(".tab").forEach(function(tab){
+    tab.onclick=function(){
+      var tabName=tab.dataset.tab;
+      document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(tc=>tc.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById("tab-"+tabName).classList.add("active");
+    }
+  });
+}
+
+function renderTypes(){
+  var el=document.getElementById("typeGrid");
+  types.forEach(function(t){
+    var div=document.createElement("div");
+    div.className="select-option"+(t.toLowerCase()===trainType?" selected":"");
+    div.textContent=t;
+    div.onclick=function(){
+      document.querySelectorAll("#typeGrid .select-option").forEach(e=>e.classList.remove("selected"));
+      div.classList.add("selected");
+      trainType=t.toLowerCase();
+    };
+    el.appendChild(div);
+  });
+}
+
+function renderColorPicker(){
+  var el=document.getElementById("colorPicker");
+  brandColors.forEach(function(c){
+    var div=document.createElement("div");
+    div.className="color-swatch"+(c===selectedColor?" selected":"");
+    div.style.background=c;
+    div.onclick=function(){
+      document.querySelectorAll(".color-swatch").forEach(e=>e.classList.remove("selected"));
+      div.classList.add("selected");
+      selectedColor=c;
+      document.getElementById("brandColorPicker").value=c;
+      document.getElementById("brandColorHex").value=c;
+      generateTheme(c);
+    };
+    el.appendChild(div);
+  });
+  
+  // Setup color picker and hex input handlers
+  document.getElementById("brandColorPicker").onchange=function(e){
+    selectedColor=e.target.value;
+    document.getElementById("brandColorHex").value=selectedColor;
+    generateTheme(selectedColor);
+    updateSelectedSwatch();
+  };
+  
+  document.getElementById("brandColorHex").onchange=function(e){
+    var hex=e.target.value;
+    if(/^#[0-9A-F]{6}$/i.test(hex)){
+      selectedColor=hex;
+      document.getElementById("brandColorPicker").value=hex;
+      generateTheme(hex);
+      updateSelectedSwatch();
+    }
+  };
+  
+  // Initialize theme with default color
+  generateTheme(selectedColor);
+}
+
+function updateSelectedSwatch(){
+  document.querySelectorAll(".color-swatch").forEach(function(e){
+    e.classList.remove("selected");
+    var bgColor=e.style.background.toLowerCase();
+    var selectedLower=selectedColor.toLowerCase();
+    if(bgColor===selectedLower||bgColor===rgbToHex(bgColor).toLowerCase()){
+      e.classList.add("selected");
+    }
+  });
+}
+
+function rgbToHex(rgb){
+  if(rgb.indexOf('#')===0)return rgb;
+  var parts=rgb.match(/\d+/g);
+  if(!parts||parts.length<3)return rgb;
+  return'#'+((1<<24)+(parseInt(parts[0])<<16)+(parseInt(parts[1])<<8)+parseInt(parts[2])).toString(16).slice(1);
+}
+
+function generateTheme(accentColor){
+  var hsl=hexToHSL(accentColor);
+  
+  generatedTheme={
+    primary:accentColor,
+    primaryLight:adjustHSL(hsl,0,0,30),
+    primaryDark:adjustHSL(hsl,0,0,-20),
+    secondary:adjustHSL(hsl,30,0,0),
+    accent:adjustHSL(hsl,180,0,0),
+    background:adjustHSL(hsl,0,-70,95),
+    text:hsl.l>50?"#1a1a1a":"#ffffff"
+  };
+  
+  // Apply to CSS variables
+  document.documentElement.style.setProperty("--primary",generatedTheme.primary);
+  document.documentElement.style.setProperty("--primary-light",generatedTheme.primaryLight);
+  
+  // Update preview
+  var preview=document.getElementById("themePreview");
+  if(preview){
+    preview.innerHTML='<div style="width:20px;height:20px;border-radius:4px;background:'+generatedTheme.primary+'" title="Primary"></div><div style="width:20px;height:20px;border-radius:4px;background:'+generatedTheme.secondary+'" title="Secondary"></div><div style="width:20px;height:20px;border-radius:4px;background:'+generatedTheme.accent+'" title="Accent"></div>';
+  }
+}
+
+function hexToHSL(hex){
+  hex=hex.replace("#","");
+  var r=parseInt(hex.substr(0,2),16)/255;
+  var g=parseInt(hex.substr(2,2),16)/255;
+  var b=parseInt(hex.substr(4,2),16)/255;
+  var max=Math.max(r,g,b),min=Math.min(r,g,b);
+  var h=0,s=0,l=(max+min)/2;
+  if(max!==min){
+    var d=max-min;
+    s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){
+      case r:h=((g-b)/d+(g<b?6:0))/6;break;
+      case g:h=((b-r)/d+2)/6;break;
+      case b:h=((r-g)/d+4)/6;break;
+    }
+  }
+  return{h:Math.round(h*360),s:Math.round(s*100),l:Math.round(l*100)};
+}
+
+function adjustHSL(hsl,hDelta,sDelta,lDelta){
+  var h=(hsl.h+hDelta)%360;
+  if(h<0)h+=360;
+  var s=Math.max(0,Math.min(100,hsl.s+sDelta));
+  var l=Math.max(0,Math.min(100,hsl.l+lDelta));
+  return hslToHex(h,s,l);
+}
+
+function hslToHex(h,s,l){
+  h=h/360;s=s/100;l=l/100;
+  var r,g,b;
+  if(s===0){
+    r=g=b=l;
+  }else{
+    var hue2rgb=function(p,q,t){
+      if(t<0)t+=1;
+      if(t>1)t-=1;
+      if(t<1/6)return p+(q-p)*6*t;
+      if(t<1/2)return q;
+      if(t<2/3)return p+(q-p)*(2/3-t)*6;
+      return p;
+    };
+    var q=l<0.5?l*(1+s):l+s-l*s;
+    var p=2*l-q;
+    r=hue2rgb(p,q,h+1/3);
+    g=hue2rgb(p,q,h);
+    b=hue2rgb(p,q,h-1/3);
+  }
+  var toHex=function(x){
+    var hex=Math.round(x*255).toString(16);
+    return hex.length===1?"0"+hex:hex;
+  };
+  return"#"+toHex(r)+toHex(g)+toHex(b);
+}
+
+function handleLogoUpload(e){
+  var file=e.target.files[0];
+  if(file){
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      logoDataUrl=ev.target.result;
+      document.getElementById("logoPreview").innerHTML="<img src='"+logoDataUrl+"'>";
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function loadVoices(){
+  fetch(API+"/voices")
+    .then(r=>r.json())
+    .then(d=>{
+      if(d.success&&d.voices){
+        voices=d.voices;
+        var sel=document.getElementById("voiceSelect");
+        sel.innerHTML="<option value=''>Select a voice...</option>";
+        voices.forEach(function(v){
+          sel.innerHTML+="<option value='"+v.id+"'>"+v.name+" - "+v.desc+"</option>";
+        });
+        document.getElementById("voiceStatus").textContent="Voices loaded";
+        document.getElementById("voiceStatus").className="voice-status ready";
+        
+      }
+    })
+    .catch(function(e){
+      document.getElementById("voiceStatus").textContent="Voice service unavailable";
+      document.getElementById("voiceStatus").className="voice-status warning";
+    });
+}
+function genTopics(){
+  var subject=document.getElementById("subject").value.trim();
+  if(!subject){alert("Enter a project name");return}
+  
+  var sceneCount = parseInt(document.getElementById("sceneCount").value) || 15;
+  
+  // Check if this is a PDF project
+  console.log("=== genTopics DEBUG ===");
+  console.log("projectContentSource:", window.projectContentSource);
+  console.log("projectId:", projectId);
+  console.log("sceneCount:", sceneCount);
+  if (window.projectContentSource === 'pdf') {
+    // PDF workflow: extract topics from uploaded PDF
+    console.log('Extracting topics from PDF...');
+    showLoad(true, "Extracting topics from PDF...");
+    
+    fetch(API + "/pdf/extract-topics", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({
+        projectId: projectId,
+        sceneCount: sceneCount
+      })
+    })
+    .then(r => r.json())
+    .then(d => {
+      console.log('PDF topics extracted:', d);
+      if (d.success && d.topics) {
+        topics = d.topics;
+        renderTopics();
+      } else {
+        throw new Error(d.error || 'Failed to extract topics');
+      }
+      showLoad(false);
+    })
+    .catch(e => {
+      console.error('PDF topic extraction error:', e);
+      showLoad(false);
+      alert("Error extracting topics from PDF: " + e.message);
+    });
+  } else {
+    // AI workflow: generate topics from context
+    console.log('Generating topics with AI...');
+    showLoad(true, "Generating topics...");
+    
+    fetch(API + "/ai/topics", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        subject: subject,
+        trainingType: trainType,
+        sceneCount: sceneCount
+      })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success && d.topics) {
+        topics = d.topics;
+        renderTopics();
+      }
+      showLoad(false);
+    })
+    .catch(e => {
+      console.error(e);
+      showLoad(false);
+      alert("Error generating topics");
+    });
+  }
+}
+
+function renderTopics(){
+  var el=document.getElementById("topicsList");
+  el.innerHTML="";
+  topics.forEach(function(t,i){
+    var div=document.createElement("div");
+    div.className="topic-item";
+    div.innerHTML="<strong>"+(i+1)+". "+t.name+"</strong>";
+    el.appendChild(div);
+    if(t.subtopics){
+      t.subtopics.forEach(function(sub){
+        var sdiv=document.createElement("div");
+        sdiv.className="topic-item sub";
+        sdiv.textContent="• "+(typeof sub==="string"?sub:sub.name);
+        el.appendChild(sdiv);
+      });
+    }
+  });
+}
+
+function parseCustomTopics(){
+  var text=document.getElementById("customTopics").value.trim();
+  if(!text){alert("Paste some topics");return}
+  
+  topics=[];
+  var currentTopic=null;
+  
+  text.split("\n").forEach(function(line){
+    line=line.trim();
+    if(!line)return;
+    
+    // Handle "Topic: " format
+    if(line.toLowerCase().startsWith("topic:")){
+      if(currentTopic)topics.push(currentTopic);
+      var topicName = line.substring(6).trim(); // Remove "Topic: "
+      currentTopic={name:topicName,subtopics:[]};
+    }
+    // Handle "Subtopic: " format
+    else if(line.toLowerCase().startsWith("subtopic:")){
+      if(currentTopic){
+        var subtopicName = line.substring(9).trim(); // Remove "Subtopic: "
+        currentTopic.subtopics.push(subtopicName);
+      }
+    }
+    // Handle "- " or "• " format (legacy)
+    else if(line.startsWith("-")||line.startsWith("•")){
+      if(currentTopic){
+        currentTopic.subtopics.push(line.replace(/^[-•]\s*/,""));
+      }
+    }
+    // Handle plain text (legacy)
+    else{
+      if(currentTopic)topics.push(currentTopic);
+      currentTopic={name:line,subtopics:[]};
+    }
+  });
+  
+  if(currentTopic)topics.push(currentTopic);
+  
+  console.log('Parsed topics:', topics);
+  renderTopics();
+}
+
+function genVideo(){
+  var subject=document.getElementById("subject").value.trim();
+  if(!subject){alert("Enter a project name");return}
+  if(!topics.length){alert("Generate or paste topics first");return}
+  
+  showLoad(true,"Generating video...");
+  document.getElementById("empty").style.display="none";
+  
+  quizAnswers = [];
+  quizCorrectCount = 0;
+  quizTotalCount = 0;
+  quizScenes = [];
+  
+  var requestBody = {
+    projectId: projectId,
+    subject:subject,
+    courseName:subject,
+    trainingType:trainType,
+    topics:topics,
+    sceneCount:parseInt(document.getElementById("sceneCount").value)||15,
+    brandColor: selectedColor,
+    brandTheme: generatedTheme
+  };
+  
+  if (window.projectContentSource === 'pdf') {
+    requestBody.contentSourceType = 'pdf';
+    console.log('Generating video from PDF with custom topics');
+  }
+  
+  fetch(API + (window.projectContentSource === "pdf" ? "/pdf/generate-video-from-topics" : "/ai/generate-video"), {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "Authorization": "Bearer " + token
+    },
+    body:JSON.stringify(requestBody)
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    console.log("Video generation response:", d);
+    if(d.success&&d.project){
+      projectId = d.project.id;
+      scenes=d.project.scenes||[];
+      initQuizTracking();
+      isMCQProject = quizTotalCount > 0 || scenes.some(function(s) {
+        return s.scene_type === 'quiz_mcq' || s.type === 'quiz_mcq';
+      });
+      console.log('Is MCQ project?', isMCQProject, '(' + quizTotalCount + ' questions)');
+      sceneDurations=scenes.map(()=>defaultDuration);
+      sceneAudios=scenes.map(()=>null);
+      renderScenes();
+      updateTotalTime();
+      videoReady=true;document.getElementById("btnGenVoice").disabled=false;
+      var editLink = document.getElementById("editScenesLink");
+      if(editLink) {
+        editLink.href = "/scene-editor?projectId=" + projectId;
+        editLink.style.display = "inline";
+      }
+      if(logoDataUrl){
+        document.getElementById("videoLogo").style.display="block";
+        document.getElementById("videoLogoImg").src=logoDataUrl;
+      }
+      var firstScene = scenes[0];
+      console.log('First scene:', firstScene);
+      var firstSceneChoices = firstScene.choices;
+      if (typeof firstSceneChoices === 'string') {
+        try {
+          firstSceneChoices = JSON.parse(firstSceneChoices);
+        } catch(e) {
+          firstSceneChoices = [];
+        }
+      }
+      var isScenarioIntro = isScenarioProject &&
+                           firstScene && 
+                           (firstScene.scene_type === 'intro' || 
+                            firstScene.scene_type === 'scenario_decision' || 
+                            firstScene.type === 'intro' ||
+                            firstScene.type === 'scenario_decision') &&
+                           (!firstSceneChoices || firstSceneChoices.length === 0);
+      console.log('Is scenario intro?', isScenarioIntro, 'Choices:', firstSceneChoices);
+      if(!isScenarioIntro) {
+        document.getElementById("bigPlayOverlay").classList.add("visible");
+      }
+      document.getElementById("playerWrapper").classList.add("paused");
+    }
+    showLoad(false);
+  })
+  .catch(e=>{console.error(e);showLoad(false);alert("Error generating video")});
+}
+
+// Initialize quiz tracking from scenes
+function initQuizTracking() {
+  quizScenes = [];
+  quizTotalCount = 0;
+  quizCorrectCount = 0;
+  quizAnswers = [];
+  
+  scenes.forEach(function(scene, idx) {
+    var sceneType = scene.scene_type || scene.type || '';
+    if (sceneType === 'quiz_mcq') {
+      quizScenes.push(idx);
+      quizTotalCount++;
+    }
+  });
+  
+  console.log('Quiz tracking initialized:', quizTotalCount, 'questions found');
+}
+
+function genVoiceOver(){
+  if(!selectedVoice){alert("Select a voice first");return}
+  if(!scenes.length){alert("Generate video first");return}
+  
+  console.log("Starting voice generation for "+scenes.length+" scenes");
+  console.log("Scenes to voice:", scenes.map((s, i) => ({
+    index: i,
+    title: s.title,
+    narration: s.narration,
+    body: s.body
+  })));
+  
+  showLoad(true,"Generating voice-over...");
+  document.getElementById("btnGenVoice").disabled=true;
+  
+  fetch(API+"/voiceover/generate",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      scenes:scenes,
+      voiceId:selectedVoice
+    })
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.success&&d.audioClips){
+      console.log("Voice-over received:",d.audioClips.length,"clips");
+      
+      sceneDurations=[];
+      sceneAudios=[];
+      
+      d.audioClips.forEach((clip,i)=>{
+        if(clip.audio&&clip.duration>0){
+          sceneDurations[i]=clip.duration+gapDuration;
+          sceneAudios[i]=clip.audio;
+        }else{
+          sceneDurations[i]=defaultDuration;
+          sceneAudios[i]=null;
+        }
+      });
+      
+      hasVoiceOver=true;
+      updateTotalTime();
+      
+      var generated=sceneAudios.filter(a=>a).length;
+      document.getElementById("voiceStatus").textContent="Voice ready! "+generated+"/"+scenes.length+" scenes";
+      document.getElementById("voiceStatus").className="voice-status ready";
+    }
+    
+    showLoad(false);
+  })
+  .catch(e=>{
+    console.error(e);
+    document.getElementById("voiceStatus").textContent="Voice generation failed";
+    document.getElementById("voiceStatus").className="voice-status error";
+    
+    showLoad(false);
+  });
+}
+
+function getTotalDuration(){return sceneDurations.reduce((a,b)=>a+b,0)}
+function updateTotalTime(){document.getElementById("totTime").textContent=fmtTime(getTotalDuration()/1000)}
+
+function renderScenes(){
+  var el=document.getElementById("scenes");var h="";
+  scenes.forEach((s,i)=>{
+    var layout=s.layout||"fulltext";
+    var sceneType=s.scene_type||s.type||"content";
+    var title=s.title||"";
+    var subtitle=s.subtitle||"";
+    var body=s.body||s.narration||"";
+    var eyebrow=s.eyebrow||"";
+    var bullets=s.bullets||[];
+    var cards=s.cards||[];
+    var timelineItems=s.timeline_items||[];
+    var iconItems=s.icon_items||[];
+    var statValue=s.stat_value||"";
+    var statLabel=s.stat_label||"";
+    var quote=s.quote||"";
+    var quoteAuthor=s.quote_author||"";
+    var bgType=s.bg_type||"gradient";
+    var gradient=s.gradient||"linear-gradient(135deg,#1e1b4b,#312e81)";
+    var assetUrl=s.asset_url||"";
+    var assetType=s.asset_type||"video";
+    
+    var centered=(layout==="stat"||layout==="quote"||sceneType==="intro"||sceneType==="closing")?" centered":"";
+    h+="<div class='scene"+(i===0?" active":"")+"'>";
+    
+    h+="<div class='scene-bg'>";
+    if(bgType==="gradient"){
+      h+="<div class='scene-bg-gradient' style='background:"+gradient+"'></div>";
+    }else if(assetUrl){
+      if(assetType==="image"){
+        h+="<img src='"+assetUrl+"'>";
+      }else{
+        h+="<video src='"+assetUrl+"' autoplay loop muted playsinline></video>";
+      }
+    }else{
+      h+="<div class='scene-bg-gradient' style='background:"+gradient+"'></div>";
+    }
+    h+="</div>";
+    
+    h+="<div class='scene-overlay'></div><div class='scene-vignette'></div>";
+    
+    if(sceneType==="intro"){
+      // Check if this is a scenario intro (first scene of scenario project)
+      var isScenarioIntro = i === 0 && isScenarioProject;
+      
+      if (isScenarioIntro) {
+        console.log('[renderScenes] Scene', i, 'is scenario intro - adding Start button');
+        h+="<div class=\"scenario-start-container\">";
+        if(eyebrow)h+="<div class=\"scene-eyebrow\">"+eyebrow+"</div>";
+        if(title)h+="<h2 class=\"scene-title\">"+title+"</h2>";
+        if(body)h+="<p class=\"scene-body\">"+body+"</p>";
+        h+="<button class=\"scenario-start-btn\" onclick=\"startScenario("+i+")\">Start Scenario <svg viewBox='0 0 24 24'><polygon points='5 3 19 12 5 21'/></svg></button>";
+        h+="</div>";
+      } else {
+        h+="<div class='intro-template'><div class='intro-template-content'>";
+        if(logoDataUrl)h+="<div class='intro-logo'><img src='"+logoDataUrl+"'></div>";
+        if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+        h+="<div class='intro-divider'></div>";
+        if(subtitle)h+="<div class='scene-subtitle'>"+subtitle+"</div>";
+        if(body)h+="<p class='scene-body'>"+body+"</p>";
+        h+="</div></div>";
+      }
+    }
+    else if(sceneType==="closing"){
+      h+="<div class='closing-template'><div class='closing-template-content'>";
+      if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+      if(body)h+="<p class='scene-body'>"+body+"</p>";
+      h+="<div class='closing-cta'>Start Applying Today</div>";
+      h+="</div></div>";
+    }
+    else if(layout==="split"){
+      h+="<div class='scene-split'><div class='scene-split-content'>";
+      if(eyebrow)h+="<div class='scene-eyebrow'>"+eyebrow+"</div>";
+      if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+      if(body)h+="<p class='scene-body'>"+body+"</p>";
+      h+="</div>";
+      if(assetUrl)h+="<div class='scene-split-image'><img src='"+assetUrl+"'></div>";
+      h+="</div>";
+          }
+    else if(layout==="half-left"){
+      h+="<div class='layout-half-left'>";
+      h+="<div class='half-media'>";
+      if(assetUrl){
+        if(assetType==="video"){
+          h+="<video src='"+assetUrl+"' autoplay loop muted playsinline></video>";
+        }else{
+          h+="<img src='"+assetUrl+"'>";
+        }
+      }
+      h+="</div>";
+      h+="<div class='half-content'>";
+      if(eyebrow)h+="<div class='scene-eyebrow'>"+eyebrow+"</div>";
+      if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+      if(body)h+="<p class='scene-body'>"+body+"</p>";
+      if(bullets&&bullets.length){h+="<ul class='scene-bullets'>";bullets.forEach(b=>{h+="<li>"+b+"</li>"});h+="</ul>";}
+      h+="</div>";
+      h+="</div>";
+    }
+    else if(layout==="half-right"){
+      h+="<div class='layout-half-right'>";
+      h+="<div class='half-content'>";
+      if(eyebrow)h+="<div class='scene-eyebrow'>"+eyebrow+"</div>";
+      if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+      if(body)h+="<p class='scene-body'>"+body+"</p>";
+      if(bullets&&bullets.length){h+="<ul class='scene-bullets'>";bullets.forEach(b=>{h+="<li>"+b+"</li>"});h+="</ul>";}
+      h+="</div>";
+      h+="<div class='half-media'>";
+      if(assetUrl){
+        if(assetType==="video"){
+          h+="<video src='"+assetUrl+"' autoplay loop muted playsinline></video>";
+        }else{
+          h+="<img src='"+assetUrl+"'>";
+        }
+      }
+      h+="</div>";
+      h+="</div>";
+    }
+    else if(layout==="third-sidebar"){
+      h+="<div class='layout-third-sidebar'>";
+      h+="<div class='sidebar-media'>";
+      if(assetUrl){
+        if(assetType==="video"){
+          h+="<video src='"+assetUrl+"' autoplay loop muted playsinline></video>";
+        }else{
+          h+="<img src='"+assetUrl+"'>";
+        }
+      }
+      h+="</div>";
+      h+="<div class='sidebar-content'>";
+      if(eyebrow)h+="<div class='scene-eyebrow'>"+eyebrow+"</div>";
+      if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+      if(body)h+="<p class='scene-body'>"+body+"</p>";
+      if(bullets&&bullets.length){h+="<ul class='scene-bullets'>";bullets.forEach(b=>{h+="<li>"+b+"</li>"});h+="</ul>";}
+      h+="</div>";
+      h+="</div>";
+    }
+    else if(sceneType==="quiz_transition"){
+      // Quiz transition screen with Start Quiz button
+      h+="<div class=\"quiz-transition-container\">";
+      if(eyebrow)h+="<div class=\"scene-eyebrow\">"+eyebrow+"</div>";
+      if(title)h+="<h2 class=\"scene-title\">"+title+"</h2>";
+      if(body)h+="<p class=\"scene-body\">"+body+"</p>";
+      h+="<button class=\"scenario-start-btn\" onclick=\"startQuiz("+i+")\">Start Quiz <svg viewBox='0 0 24 24' style='width:24px;height:24px;fill:currentColor;margin-left:0.5rem;'><polygon points='5 3 19 12 5 21'/></svg></button>";
+      h+="</div>";
+    }
+    else if(sceneType==="quiz_mcq" && s.quiz_data){
+  // Quiz gets its OWN container - not inside scene-content
+  var quizData = typeof s.quiz_data === 'string' ? JSON.parse(s.quiz_data) : s.quiz_data;
+  
+  h+="<div class='scene-content quiz-scene'>";
+  h+="<div class='quiz-container'>";
+  h+="<div class='quiz-header'>";
+  if(title)h+="<div class='quiz-progress'>"+title+"</div>";
+  h+="<h2 class='quiz-question'>"+(quizData.question || body)+"</h2>";
+  h+="</div>";
+  
+  h+="<div class='quiz-options'>";
+  if(quizData.options && quizData.options.length === 4){
+    quizData.options.forEach(function(opt){
+      h+="<button class='quiz-option' data-scene='"+i+"' data-option='"+opt.id+"' data-correct='"+opt.is_correct+"' onclick='selectQuizOption("+i+", \""+opt.id+"\", "+opt.is_correct+")'>";
+      h+="<span class='quiz-option-letter'>"+opt.id+"</span>";
+      h+="<span class='quiz-option-text'>"+opt.text+"</span>";
+      h+="</button>";
+    });
+  }
+  h+="</div>";
+  
+  h+="<div class='quiz-explanation' style='display:none;'>";
+  h+="<div class='quiz-explanation-content'>"+(quizData.explanation || '')+"</div>";
+  h+="<button class='quiz-next-btn' onclick='handleQuizNext("+i+")'>Next →</button>";
+  h+="</div>";
+  h+="</div>";
+  h+="</div>";
+}
+else if(sceneType==="scenario_decision"){
+  // Scenario gets its OWN container - not inside scene-content
+  // Parse choices if stored as JSON string
+  var sceneChoices = s.choices;
+  if (typeof sceneChoices === 'string') {
+    try {
+      sceneChoices = JSON.parse(sceneChoices);
+    } catch(e) {
+      sceneChoices = [];
+    }
+  }
+  
+  // Check if this scene has choices (decision point) or not (intro/context)
+  var hasChoices = sceneChoices && sceneChoices.length > 0;
+  
+  console.log('[renderScenes] Scene', i, 'Type:', sceneType, 'Has choices:', hasChoices, 'Choices:', sceneChoices);
+  
+  if(!hasChoices) {
+    // Intro/context screen - centered with start button
+    console.log('[renderScenes] Rendering INTRO with Start button');
+    h+="<div class=\"scenario-start-container\">";
+    if(eyebrow)h+="<div class=\"scene-eyebrow\">"+eyebrow+"</div>";
+    if(title)h+="<h2 class=\"scene-title\">"+title+"</h2>";
+    if(body)h+="<p class=\"scene-body\">"+body+"</p>";
+    h+="<button class=\"scenario-start-btn\" onclick=\"startScenario("+i+")\">Start Scenario <svg viewBox='0 0 24 24'><polygon points='5 3 19 12 5 21'/></svg></button>";
+    h+="</div>";
+  } else {
+    // Decision screens - split layout
+    console.log('[renderScenes] Rendering DECISION with', sceneChoices.length, 'choices');
+    h+="<div class=\"scene-split-layout\">";
+    h+="<div class=\"decision-text-container\">";
+    if(eyebrow)h+="<div class=\"scene-eyebrow\">"+eyebrow+"</div>";
+    if(title)h+="<h2 class=\"scene-title\">"+title+"</h2>";
+    if(body)h+="<p class=\"scene-body\">"+body+"</p>";
+    h+="</div>";
+    h+="<div class=\"decision-buttons\">";
+    sceneChoices.forEach(function(choice){
+      h+="<button class=\"decision-btn\" onclick=\"makeChoice("+i+",'"+choice.next_scene_id+"')\">"+choice.text+"</button>";
+    });
+    h+="</div>";
+    h+="</div>";
+  }
+}
+else{
+      h+="<div class='scene-content"+centered+"'>";
+      
+      if(layout==="stat"&&statValue){
+        h+="<div class='scene-stat'><div class='scene-stat-value'>"+statValue+"</div><div class='scene-stat-label'>"+statLabel+"</div></div>";
+      }
+      else if(layout==="quote"&&quote){
+        h+="<div class='scene-quote-wrapper'><div class='scene-quote'>"+quote+"</div>";
+        if(quoteAuthor)h+="<div class='scene-quote-author'>— "+quoteAuthor+"</div>";
+        h+="</div>";
+      }
+      else if(layout==="iconlist"&&iconItems.length){
+        if(eyebrow)h+="<div class='scene-eyebrow'>"+eyebrow+"</div>";
+        if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+        h+="<div class='scene-iconlist'>";
+        iconItems.forEach(item=>{
+          h+="<div class='scene-iconitem'><div class='scene-iconitem-icon'>"+(item.icon||"●")+"</div><div><div class='scene-iconitem-title'>"+item.title+"</div><div class='scene-iconitem-desc'>"+(item.desc||"")+"</div></div></div>";
+        });
+        h+="</div>";
+      }
+      else if((layout==="cards2"||layout==="cards4")&&cards.length){
+        if(eyebrow)h+="<div class='scene-eyebrow'>"+eyebrow+"</div>";
+        if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+        h+="<div class='scene-cards "+(layout==="cards2"?"cols-2":"cols-3")+"'>";
+        cards.forEach(c=>{
+          h+="<div class='scene-card'>";
+          if(c.icon)h+="<div class='scene-card-icon'>"+c.icon+"</div>";
+          h+="<div class='scene-card-title'>"+c.title+"</div><div class='scene-card-desc'>"+(c.desc||c.description||"")+"</div></div>";
+        });
+        h+="</div>";
+      }
+      else if(layout==="timeline"&&timelineItems.length){
+        if(eyebrow)h+="<div class='scene-eyebrow'>"+eyebrow+"</div>";
+        if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+        h+="<div class='scene-timeline'>";
+        timelineItems.forEach(t=>{
+          h+="<div class='timeline-item'><div class='timeline-year'>"+t.year+"</div><div class='timeline-event'>"+t.event+"</div></div>";
+        });
+        h+="</div>";
+      }
+      else if(layout==="bullets"&&bullets.length){
+        if(eyebrow)h+="<div class='scene-eyebrow'>"+eyebrow+"</div>";
+        if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+        h+="<ul class='scene-bullets'>";
+        bullets.forEach(b=>{h+="<li>"+b+"</li>"});
+        h+="</ul>";
+      }
+      else{
+        if(eyebrow)h+="<div class='scene-eyebrow'>"+eyebrow+"</div>";
+        if(title)h+="<h2 class='scene-title'>"+title+"</h2>";
+        if(subtitle)h+="<div class='scene-subtitle'>"+subtitle+"</div>";
+        if(body)h+="<p class='scene-body'>"+body+"</p>";
+        if(bullets&&bullets.length){h+="<ul class='scene-bullets'>";bullets.forEach(b=>{h+="<li>"+b+"</li>"});h+="</ul>";}
+        if(timelineItems&&timelineItems.length){h+="<div class='scene-timeline'>";timelineItems.forEach(t=>{h+="<div class='timeline-item'><div class='timeline-year'>"+t.year+"</div><div class='timeline-event'>"+t.event+"</div></div>";});h+="</div>";}
+        if(cards&&cards.length){h+="<div class='scene-cards cols-2'>";cards.forEach(c=>{h+="<div class='scene-card'>";if(c.icon)h+="<div class='scene-card-icon'>"+c.icon+"</div>";h+="<div class='scene-card-title'>"+c.title+"</div><div class='scene-card-desc'>"+(c.desc||c.description||"")+"</div></div>";});h+="</div>";}
+        if(iconItems&&iconItems.length){h+="<div class='scene-iconlist'>";iconItems.forEach(item=>{h+="<div class='scene-iconitem'><div class='scene-iconitem-icon'>"+(item.icon||"●")+"</div><div><div class='scene-iconitem-title'>"+item.title+"</div><div class='scene-iconitem-desc'>"+(item.desc||"")+"</div></div></div>";});h+="</div>";}
+        if(statValue)h+="<div class='scene-stat'><div class='scene-stat-value'>"+statValue+"</div><div class='scene-stat-label'>"+statLabel+"</div></div>";
+        if(quote)h+="<div class='scene-quote-wrapper'><div class='scene-quote'>"+quote+"</div>"+(quoteAuthor?"<div class='scene-quote-author'>— "+quoteAuthor+"</div>":"")+"</div>";
+      }
+      
+      h+="</div>";
+    }
+    
+    
+    h+="</div>";
+  });
+  el.innerHTML=h;
+  updateChapterIndicator(0);
+}
+
+function togglePlay(){
+  // Scenarios don't use video playback controls
+  if (isScenarioProject) return;
+  if(videoReady){playing?pause():play()}
+}
+function play(){
+  // Scenarios don't use video playback controls
+  if (isScenarioProject) return;
+  
+  // Reset to beginning if starting from stopped state
+  if(document.getElementById("bigPlayOverlay").classList.contains("visible")) {
+    curScene = 0;
+    document.querySelectorAll(".scene").forEach((el,i)=>el.classList.toggle("active",i===0));
+    updateChapterIndicator(0);
+    updateScrubber();
+  }
+  
+  playing=true;
+  document.getElementById("playIcon").innerHTML="<rect x='6' y='4' width='4' height='16'/><rect x='14' y='4' width='4' height='16'/>";
+  document.getElementById("bigPlayOverlay").classList.remove("visible");
+  document.getElementById("playerWrapper").classList.remove("paused");
+  playScene(curScene);
+}
+function pause(){
+  // Scenarios don't use video playback controls
+  if (isScenarioProject) return;
+  playing=false;
+  audioPlayer.pause();
+  document.getElementById("playIcon").innerHTML="<polygon points='5 3 19 12 5 21'/>";
+  document.getElementById("bigPlayOverlay").classList.add("visible");
+  document.getElementById("playerWrapper").classList.add("paused");
+  document.getElementById("audioIndicator").classList.remove("active");
+}
+function playScene(idx){
+  console.log("=== Playing scene "+idx+" ===");
+  document.querySelectorAll(".scene").forEach((el,i)=>el.classList.toggle("active",i===idx));
+  updateChapterIndicator(idx);
+  updateScrubber();
+  
+  // Check if this is a quiz or scenario scene - auto-pause for interaction
+  var scene = scenes[idx];
+  var isInteractive = false;
+  
+  // Quiz transition and quiz scenes are always interactive
+  if(scene && (scene.scene_type === 'quiz_transition' || scene.type === 'quiz_transition' ||
+               scene.scene_type === 'quiz_mcq' || scene.type === 'quiz_mcq')) {
+    isInteractive = true;
+  }
+  
+  // Scenario decision scenes are only interactive if they have choices
+  if(scene && (scene.scene_type === 'scenario_decision' || scene.type === 'scenario_decision')) {
+    var sceneChoices = scene.choices;
+    // Parse if stored as JSON string
+    if (typeof sceneChoices === 'string') {
+      try {
+        sceneChoices = JSON.parse(sceneChoices);
+      } catch(e) {
+        sceneChoices = [];
+      }
+    }
+    if(sceneChoices && sceneChoices.length > 0) {
+      isInteractive = true;
+    }
+  }
+  
+  if(isInteractive){
+    console.log("Interactive scene detected - pausing playback");
+    playing = false;
+    audioPlayer.pause();
+    document.getElementById("playIcon").innerHTML="<polygon points='5 3 19 12 5 21'/>";
+    document.getElementById("playerWrapper").classList.add("paused");
+    document.getElementById("playerWrapper").classList.add("interactive");
+    document.getElementById("audioIndicator").classList.remove("active");
+    document.getElementById("bigPlayOverlay").classList.remove("visible");
+    return;
+  }
+  
+  var audio=sceneAudios[idx];
+  if(audio){
+    console.log("Playing audio for scene "+idx);
+    audioPlayer.src=audio;
+    audioPlayer.volume=volume;
+    audioPlayer.playbackRate=playbackSpeed;
+    audioPlayer.play().catch(e=>{
+      console.error("Audio play error:",e);
+      setTimeout(()=>{if(playing)nextScene()},sceneDurations[idx]/playbackSpeed);
+    });
+  }else{
+    console.log("No audio for scene "+idx+", using timer");
+    setTimeout(()=>{if(playing)nextScene()},sceneDurations[idx]/playbackSpeed);
+  }
+}
+
+    function nextScene(){
+  // Check if current scene is consequence - find next decision point
+  var currentScene = scenes[curScene];
+  if(currentScene && currentScene.scene_type === "consequence"){
+    var nextDecision = scenes.findIndex((s,i) => i > curScene && (s.scene_type === "scenario_decision" || s.scene_type === "outcome"));
+    if(nextDecision !== -1){ curScene = nextDecision; playScene(curScene); return; }
+  }
+  if(curScene<scenes.length-1){
+    curScene++;
+    playScene(curScene);
+  }else{
+    pause();
+    curScene=0;
+    document.querySelectorAll(".scene").forEach((el,i)=>el.classList.toggle("active",i===0));
+    updateChapterIndicator(0);
+    updateScrubber();
+  }
+}
+function goToScene(idx){
+  // Scenarios use decision-based navigation only
+  if (isScenarioProject) return;
+  if(idx<0||idx>=scenes.length)return;
+  audioPlayer.pause();
+  curScene=idx;
+  document.querySelectorAll(".scene").forEach((el,i)=>el.classList.toggle("active",i===idx));
+  updateChapterIndicator(idx);
+  updateScrubber();
+  if(playing)playScene(idx);
+}
+function updateScrubber(){
+  var elapsed=0;
+  for(var i=0;i<curScene;i++)elapsed+=sceneDurations[i];
+  var pct=getTotalDuration()>0?(elapsed/getTotalDuration())*100:0;
+  document.getElementById("scrubberProgress").style.width=pct+"%";
+  document.getElementById("curTime").textContent=fmtTime(elapsed/1000);
+}
+function fmtTime(s){var m=Math.floor(s/60),sec=Math.floor(s%60);return m+":"+(sec<10?"0":"")+sec}
+function scrubberClick(e){
+  if(!scenes.length)return;
+  var pct=(e.clientX-e.currentTarget.getBoundingClientRect().left)/e.currentTarget.offsetWidth;
+  var target=pct*getTotalDuration(),elapsed=0;
+  for(var i=0;i<scenes.length;i++){
+    if(elapsed+sceneDurations[i]>target){goToScene(i);return}
+    elapsed+=sceneDurations[i];
+  }
+  goToScene(scenes.length-1);
+}
+function toggleFS(){document.fullscreenElement?document.exitFullscreen():document.querySelector(".player-wrapper").requestFullscreen()}
+function showLoad(show,txt){
+  var el=document.getElementById("loader");
+  el.querySelector(".loading-text").textContent=txt||"Loading...";
+  el.classList.toggle("active",show);
+}
+document.onkeydown=function(e){
+  if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA")return;
+  if(e.code==="Space"){e.preventDefault();togglePlay()}
+  if(e.code==="ArrowRight")goToScene(curScene+1);
+  if(e.code==="ArrowLeft")goToScene(curScene-1);
+  if(e.code==="KeyF")toggleFS();
+  if(e.code==="KeyM")audioPlayer.muted=!audioPlayer.muted;
+};
+
+// Load project by ID (view mode - hide sidebar)
+function loadProjectById(id) {
+  console.log('Loading project:', id);
+  projectId = id;
+  
+  // Hide sidebar for viewing mode
+  document.querySelector('.sidebar').style.display = 'none';
+  document.querySelector('.main').style.gridTemplateColumns = '1fr';
+  
+  showLoad(true, 'Loading project...');
+
+  token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  fetch(API + '/projects/' + id, {
+    headers: {
+      'Authorization': 'Bearer ' + token
+    }
+  })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success && d.project) {
+        scenes = d.scenes || d.project.scenes || [];
+        
+        // Detect if this is a scenario project
+        isScenarioProject = d.project.project_type === 'scenario' || 
+                            scenes.some(function(s) { 
+                              return s.scene_type === 'scenario_decision' || s.type === 'scenario_decision';
+                            });
+        
+        console.log('[loadProjectById] Is scenario project?', isScenarioProject);
+        
+        // Add scenario-mode class to hide video controls
+        if (isScenarioProject) {
+          document.getElementById('playerWrapper').classList.add('scenario-mode');
+        }
+        
+        // Initialize quiz tracking
+        initQuizTracking();
+        
+        // Detect if this is an MCQ project
+        isMCQProject = quizTotalCount > 0 || scenes.some(function(s) {
+          return s.scene_type === 'quiz_mcq' || s.type === 'quiz_mcq';
+        });
+        console.log('[loadProjectById] Is MCQ project?', isMCQProject, '(' + quizTotalCount + ' questions)');
+        
+        // Initialize durations
+        sceneDurations = scenes.map(() => defaultDuration);
+        sceneAudios = scenes.map(() => null);
+        
+        // Load audio URLs from database
+        console.log('[loadProjectById] Loading audio URLs from scenes...');
+        scenes.forEach(function(scene, idx) {
+          if (scene.audio_url) {
+            console.log('[loadProjectById] Found audio for scene', idx, ':', scene.audio_url);
+            sceneAudios[idx] = scene.audio_url;
+          }
+        });
+        
+        // Apply brand color if available
+        if (d.project.brand_color) {
+          console.log('🎨 Applying brand color:', d.project.brand_color);
+          
+          // Set CSS variable
+          document.documentElement.style.setProperty('--primary', d.project.brand_color);
+          
+          // Apply to specific elements with a style tag
+          var styleEl = document.createElement('style');
+          styleEl.innerHTML = `
+            .btn-primary { background: ${d.project.brand_color} !important; }
+            .scenario-start-btn { background: ${d.project.brand_color} !important; }
+            .scene-bullets li:before { background: ${d.project.brand_color} !important; }
+            .scrubber-progress { background: ${d.project.brand_color} !important; }
+          `;
+          document.head.appendChild(styleEl);
+        }
+        
+        renderScenes();
+        updateTotalTime();
+        videoReady = true;document.getElementById("btnGenVoice").disabled=false;
+        
+        // Show Edit Scenes link
+        // Show Edit Scenes link
+            var editLink = document.getElementById("editScenesLink");
+            if(editLink) {
+              editLink.href = "/scene-editor?projectId=" + projectId;
+              editLink.style.display = "inline";
+            }
+        
+        document.getElementById('empty').style.display = 'none';
+        
+        // Check if first scene is a scenario intro (no choices) - don't show Play overlay
+        var firstScene = scenes[0];
+        console.log('[loadProjectById] First scene:', firstScene);
+        
+        // Parse choices if stored as JSON string
+        var firstSceneChoices = firstScene ? firstScene.choices : null;
+        if (typeof firstSceneChoices === 'string') {
+          try {
+            firstSceneChoices = JSON.parse(firstSceneChoices);
+          } catch(e) {
+            console.error('Error parsing choices:', e);
+            firstSceneChoices = [];
+          }
+        }
+        
+        // ✅ FIX: Only hide play button for scenario intros
+        // (MCQ projects will have Start Quiz button on last content scene, so intro can have play button)
+        var isScenarioIntro = isScenarioProject &&
+                             firstScene && 
+                             (firstScene.scene_type === 'intro' || 
+                              firstScene.scene_type === 'scenario_decision') &&
+                             (!firstSceneChoices || firstSceneChoices.length === 0);
+        
+        console.log('[loadProjectById] Is scenario intro?', isScenarioIntro, 'Choices:', firstSceneChoices);
+        
+        // Only show big play overlay if NOT a scenario intro
+        if (!isScenarioIntro) {
+          document.getElementById('bigPlayOverlay').classList.add('visible');
+        }
+        document.getElementById('playerWrapper').classList.add('paused');
+        
+        showLoad(false);
+        setupPlaybackControls();
+      } else {
+        throw new Error('Failed to load project');
+      }
+    })
+    .catch(function(e) {
+      console.error('Error loading project:', e);
+      alert('Failed to load project: ' + e.message);
+      showLoad(false);
+      setTimeout(function() {
+        window.location.href = '/projects';
+      }, 2000);
+    });
+}
+
+// Load project for creation mode (NEW SEPARATE FUNCTION)
+// Load project for creation mode
+function loadProjectForCreation(id, source) {
+  console.log('Loading project for creation:', id, 'Source:', source);
+  projectId = id;
+  showLoad(true, 'Loading project...');
+  token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  fetch(API + '/projects/' + id, {
+    headers: {'Authorization': 'Bearer ' + token}
+  })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success && d.project) {
+        const subjectField = document.getElementById('subject');
+        subjectField.value = d.project.name || '';
+        subjectField.readOnly = true;
+        subjectField.style.background = 'var(--bg-light)';
+        subjectField.style.cursor = 'not-allowed';
+        
+        // Store content source type for later use
+        window.projectContentSource = d.project.content_source_type || 'ai';
+        
+        console.log('Project loaded:', d.project.name, 'Source:', window.projectContentSource);
+        showLoad(false);
+      } else {
+        throw new Error('Failed to load project');
+      }
+    })
+    .catch(function(e) {
+      console.error('Error loading project:', e);
+      alert('Failed to load project: ' + e.message);
+      showLoad(false);
+      window.location.href = '/projects';
+    });
+}
+function setupPlaybackControls() {
+  document.getElementById("btnPlay").onclick = togglePlay;
+  document.getElementById("bigPlayOverlay").onclick = togglePlay;
+  document.getElementById("btnRew").onclick = function() { goToScene(curScene - 1) };
+  document.getElementById("btnFwd").onclick = function() { goToScene(curScene + 1) };
+  document.getElementById("btnFS").onclick = toggleFS;
+  document.getElementById("scrubber").onclick = scrubberClick;
+  document.getElementById("speedBtn").onclick = function() { document.getElementById("speedMenu").classList.toggle("active") };
+  document.getElementById("btnVolume").onclick = function() { document.getElementById("volumeMenu").classList.toggle("active") };
+  document.getElementById("volumeSlider").oninput = function(e) { volume = e.target.value / 100; audioPlayer.volume = volume };
+  
+  document.querySelectorAll(".speed-option").forEach(function(el) {
+    el.onclick = function() {
+      playbackSpeed = parseFloat(el.dataset.speed);
+      document.getElementById("speedBtn").textContent = el.textContent;
+      document.querySelectorAll(".speed-option").forEach(function(e) { e.classList.remove("active") });
+      el.classList.add("active");
+      document.getElementById("speedMenu").classList.remove("active");
+      audioPlayer.playbackRate = playbackSpeed;
+    }
+  });
+  
+  document.onclick = function(e) {
+    if (!e.target.closest(".speed-control")) document.getElementById("speedMenu").classList.remove("active");
+    if (!e.target.closest(".volume-control")) document.getElementById("volumeMenu").classList.remove("active");
+  };
+  
+  audioPlayer.onended = function() {
+    console.log("Audio ended for scene " + curScene);
+    document.getElementById("audioIndicator").classList.remove("active");
+    if (playing) {
+      setTimeout(function() {
+        if (playing) nextScene();
+      }, gapDuration);
+    }
+  };
+  
+  audioPlayer.onplay = function() { document.getElementById("audioIndicator").classList.add("active") };
+  audioPlayer.onpause = function() { document.getElementById("audioIndicator").classList.remove("active") };
+}
+
+function makeChoice(currentIdx, nextSceneId){
+  console.log('Choice made, next scene:', nextSceneId);
+  var nextIdx = scenes.findIndex(s => s.id === nextSceneId);
+  if(nextIdx !== -1){
+    goToScene(nextIdx); playing = true; playScene(nextIdx);
+  }
+}
+
+// Start scenario from first screen
+function startScenario(currentIdx) {
+  console.log('Starting scenario from scene:', currentIdx);
+  // Move to next scene (first actual decision)
+  if(currentIdx < scenes.length - 1) {
+    playing = true;
+    document.getElementById("playerWrapper").classList.remove("paused");
+    nextScene();
+  }
+}
+
+// Start quiz from intro screen
+function startQuiz(sceneIdx) {
+  console.log('Starting quiz from scene', sceneIdx);
+  
+  // Hide big play overlay if visible
+  document.getElementById('bigPlayOverlay').classList.remove('visible');
+  document.getElementById('playerWrapper').classList.remove('paused');
+  
+  // Set playing state and move to next scene (first content scene after intro)
+  playing = true;
+  goToScene(sceneIdx + 1);
+}
+
+function selectQuizOption(sceneIdx, optionId, isCorrect){
+  console.log("Selected option:", optionId, "Correct:", isCorrect);
+  
+  var scene = document.querySelectorAll('.scene')[sceneIdx];
+  if(!scene) return;
+  
+  var options = scene.querySelectorAll('.quiz-option');
+  var explanation = scene.querySelector('.quiz-explanation');
+  
+  // Track the answer
+  quizAnswers.push({
+    sceneIdx: sceneIdx,
+    optionId: optionId,
+    isCorrect: isCorrect
+  });
+  
+  if(isCorrect) {
+    quizCorrectCount++;
+  }
+  
+  // Disable all options
+  options.forEach(function(btn){
+    btn.disabled = true;
+    var btnCorrect = btn.getAttribute('data-correct') === 'true';
+    
+    if(btnCorrect){
+      btn.classList.add('correct');
+    } else if(btn.getAttribute('data-option') === optionId){
+      btn.classList.add('incorrect');
+    }
+  });
+  
+  // Show explanation
+  if(explanation){
+    explanation.style.display = 'block';
+  }
+}
+
+// Handle quiz next button - check if last question
+function handleQuizNext(sceneIdx) {
+  // Find current position in quiz scenes
+  var currentQuizIndex = quizScenes.indexOf(sceneIdx);
+  
+  // Check if this is the last quiz question
+  if(currentQuizIndex === quizScenes.length - 1) {
+    // Last question - show summary
+    showQuizSummary();
+  } else {
+    // Not last question - go to next scene
+    nextScene();
+  }
+}
+
+// Show quiz summary/results page
+function showQuizSummary() {
+  console.log('Showing quiz summary:', quizCorrectCount, '/', quizTotalCount);
+  
+  var percentage = quizTotalCount > 0 ? Math.round((quizCorrectCount / quizTotalCount) * 100) : 0;
+  var wrongCount = quizTotalCount - quizCorrectCount;
+  
+  // Determine message based on score
+  var icon, message;
+if(percentage >= 80) {
+  icon = '🎯';
+  message = 'Outstanding Performance! You have demonstrated a strong understanding of the material.';
+} else if(percentage >= 60) {
+  icon = '⭐';
+  message = 'Well Done! Consider reviewing the topics you missed to strengthen your knowledge.';
+} else {
+  icon = '📚';
+  message = 'Keep Learning! Review the material and try again to improve your score.';
+}
+  
+  // Create summary HTML
+  var summaryHtml = "<div class='scene active'>";
+  summaryHtml += "<div class='scene-bg'><div class='scene-bg-gradient' style='background:linear-gradient(135deg,#1e1b4b,#312e81)'></div></div>";
+  summaryHtml += "<div class='scene-overlay'></div><div class='scene-vignette'></div>";
+  
+  summaryHtml += "<div class='quiz-summary'>";
+  summaryHtml += "<div class='quiz-summary-icon'>"+icon+"</div>";
+  summaryHtml += "<h1 class='quiz-summary-title'>Quiz Complete!</h1>";
+  summaryHtml += "<p class='quiz-summary-subtitle'>Here's how you did</p>";
+  
+  summaryHtml += "<div class='quiz-score-circle'>";
+  summaryHtml += "<div class='quiz-score-percent'>"+percentage+"%</div>";
+  summaryHtml += "<div class='quiz-score-label'>Score</div>";
+  summaryHtml += "</div>";
+  
+  summaryHtml += "<div class='quiz-stats'>";
+  summaryHtml += "<div class='quiz-stat'><div class='quiz-stat-value correct'>"+quizCorrectCount+"</div><div class='quiz-stat-label'>Correct</div></div>";
+  summaryHtml += "<div class='quiz-stat'><div class='quiz-stat-value incorrect'>"+wrongCount+"</div><div class='quiz-stat-label'>Incorrect</div></div>";
+  summaryHtml += "<div class='quiz-stat'><div class='quiz-stat-value'>"+quizTotalCount+"</div><div class='quiz-stat-label'>Total</div></div>";
+  summaryHtml += "</div>";
+  
+  summaryHtml += "<div class='quiz-message'>"+message+"</div>";
+  
+  summaryHtml += "<div class='quiz-summary-actions'>";
+  summaryHtml += "<button class='quiz-summary-btn secondary' onclick='restartQuiz()'>Retake Quiz</button>";
+  summaryHtml += "<a href='/projects' class='quiz-summary-btn primary'>Back to Projects</a>";
+  summaryHtml += "<button class='quiz-summary-btn secondary' onclick='editScenes()'>✏️ Edit Scenes</button>";
+  summaryHtml += "</div>";
+  
+  summaryHtml += "</div>";
+  summaryHtml += "</div>";
+  
+  // Hide all scenes and append summary
+  document.querySelectorAll('.scene').forEach(function(el){
+    el.classList.remove('active');
+  });
+  
+  document.getElementById('scenes').innerHTML += summaryHtml;
+  
+  // Update chapter indicator
+  document.getElementById("chapterIndicator").textContent = "Results";
+  
+  // Hide controls
+  document.getElementById("playerWrapper").classList.add("interactive");
+}
+
+// Restart quiz from beginning
+function restartQuiz() {
+  // Reset tracking
+  quizAnswers = [];
+  quizCorrectCount = 0;
+  
+  // Re-render scenes
+  renderScenes();
+  
+  // Go to first quiz scene
+  if(quizScenes.length > 0) {
+    goToScene(quizScenes[0]);
+  } else {
+    goToScene(0);
+  }
+  
+  // Remove interactive class
+  document.getElementById("playerWrapper").classList.remove("interactive");
+}
+
+// Navigate to scene editor for current project
+function editScenes() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const projectId = urlParams.get('projectId') || urlParams.get('id');
+  
+  if (projectId) {
+    window.location.href = `/scene-editor?project=${projectId}`;
+  } else {
+    alert('No project ID found');
+  }
+}
+</script>
+</body>
+</html>

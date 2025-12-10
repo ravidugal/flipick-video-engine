@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Projects - Flipick Video Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#444ce7;
+  --primary-light:#849bff;
+  --primary-hover:#3538c9;
+  --gray-50:#f9fafb;
+  --gray-100:#f3f4f6;
+  --gray-200:#e5e7eb;
+  --gray-300:#d1d5db;
+  --gray-400:#9ca3af;
+  --gray-500:#6b7280;
+  --gray-600:#4b5563;
+  --gray-700:#374151;
+  --gray-800:#1f2937;
+  --gray-900:#111827;
+  --gray-dark:#545454;
+  --gray-mid:#7b8fa2;
+  --gray-light:#aaabab;
+  --gray-border:#e2e4e9;
+  --bg-white:#fff;
+  --bg-light:#f8f9fb;
+  --bg-page:#f0f2f5;
+  --error:#ef4444;
+  --success:#10b981;
+  --header-height:64px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg-page);color:#1a1a1a;min-height:100vh}
+
+/* ===== ELEGANT HEADER ===== */
+.header{
+  height:var(--header-height);
+  background:var(--bg-white);
+  border-bottom:1px solid var(--gray-border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 1.5rem;
+  gap:2rem;
+  position:relative;
+  z-index:100;
+}
+
+/* Logo Section */
+.header-left{display:flex;align-items:center;gap:2rem;flex-shrink:0}
+.logo{display:flex;align-items:center;gap:0.625rem;text-decoration:none;color:var(--gray-900);transition:opacity 0.2s}
+.logo:hover{opacity:0.8}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.875rem;box-shadow:0 2px 8px rgba(68,76,231,0.3)}
+.logo-text{font-size:1rem;font-weight:600;letter-spacing:-0.01em}
+.logo-accent{color:var(--primary)}
+
+/* Navigation */
+.header-nav{display:flex;align-items:center;gap:0.25rem}
+.nav-link{padding:0.5rem 0.75rem;font-size:0.875rem;font-weight:500;color:var(--gray-600);text-decoration:none;border-radius:6px;transition:all 0.2s;display:flex;align-items:center;gap:0.5rem}
+.nav-link:hover{color:var(--gray-900);background:var(--gray-100)}
+.nav-link.active{color:var(--primary);background:rgba(68,76,231,0.08)}
+.nav-link svg{width:18px;height:18px}
+
+/* Search Section (Center) */
+.header-center{flex:1;max-width:600px;display:flex;justify-content:center}
+.search-container{position:relative;width:100%;max-width:480px}
+.search-input{width:100%;height:40px;padding:0 1rem 0 2.75rem;background:var(--gray-50);border:1px solid var(--gray-border);border-radius:8px;font-size:0.875rem;color:var(--gray-900);transition:all 0.2s}
+.search-input:hover{background:var(--white);border-color:var(--gray-300)}
+.search-input:focus{outline:none;background:var(--white);border-color:var(--primary);box-shadow:0 0 0 3px rgba(68,76,231,0.1)}
+.search-input::placeholder{color:var(--gray-400)}
+.search-icon{position:absolute;left:0.875rem;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--gray-400);pointer-events:none}
+.search-kbd{position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);padding:0.25rem 0.5rem;background:var(--white);border:1px solid var(--gray-border);border-radius:4px;font-size:0.75rem;font-weight:600;color:var(--gray-500);font-family:'SF Mono','Monaco','Courier New',monospace;pointer-events:none}
+
+/* Right Section */
+.header-right{display:flex;align-items:center;gap:0.75rem;flex-shrink:0}
+
+/* Tenant Selector */
+.tenant-selector{position:relative}
+.tenant-button{display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0.875rem;background:var(--white);border:1px solid var(--gray-border);border-radius:8px;font-size:0.875rem;font-weight:500;color:var(--gray-700);cursor:pointer;transition:all 0.2s;min-width:140px}
+.tenant-button:hover{border-color:var(--gray-300);background:var(--gray-50)}
+.tenant-button:active{transform:scale(0.98)}
+.tenant-icon{width:24px;height:24px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:6px;display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:0.75rem;flex-shrink:0}
+.tenant-name{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chevron-icon{width:16px;height:16px;color:var(--gray-400);transition:transform 0.2s;flex-shrink:0}
+.tenant-button.open .chevron-icon{transform:rotate(180deg)}
+
+/* Tenant Dropdown */
+.tenant-dropdown{position:absolute;top:calc(100% + 0.5rem);right:0;width:280px;background:var(--white);border:1px solid var(--gray-border);border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.12);opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.2s;z-index:1000}
+.tenant-dropdown.open{opacity:1;visibility:visible;transform:translateY(0)}
+.tenant-dropdown-header{padding:0.75rem 1rem;border-bottom:1px solid var(--gray-border)}
+.tenant-dropdown-title{font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-500)}
+.tenant-list{padding:0.5rem;max-height:280px;overflow-y:auto}
+.tenant-item{display:flex;align-items:center;gap:0.75rem;padding:0.625rem 0.75rem;border-radius:6px;cursor:pointer;transition:background 0.15s}
+.tenant-item:hover{background:var(--gray-50)}
+.tenant-item.active{background:rgba(68,76,231,0.08)}
+.tenant-item-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:0.875rem;flex-shrink:0}
+.tenant-item-info{flex:1;min-width:0}
+.tenant-item-name{font-size:0.875rem;font-weight:500;color:var(--gray-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tenant-item-type{font-size:0.75rem;color:var(--gray-500);margin-top:0.125rem}
+.tenant-item-check{width:18px;height:18px;color:var(--primary);flex-shrink:0;opacity:0;transition:opacity 0.15s}
+.tenant-item.active .tenant-item-check{opacity:1}
+
+/* Action Buttons */
+.btn-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;border-radius:8px;color:var(--gray-600);cursor:pointer;transition:all 0.2s;position:relative}
+.btn-icon:hover{background:var(--gray-100);color:var(--gray-900)}
+.btn-icon svg{width:20px;height:20px}
+
+/* User Menu */
+.user-menu{position:relative}
+.user-button{display:flex;align-items:center;gap:0.625rem;padding:0.375rem;background:transparent;border:none;border-radius:8px;cursor:pointer;transition:background 0.2s}
+.user-button:hover{background:var(--gray-100)}
+.user-avatar{width:32px;height:32px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:0.875rem}
+.user-info{text-align:left}
+.user-name{font-size:0.875rem;font-weight:500;color:var(--gray-900);line-height:1.2}
+.user-role{font-size:0.75rem;color:var(--gray-500)}
+
+/* Divider */
+.header-divider{width:1px;height:32px;background:var(--gray-border)}
+
+/* Responsive */
+@media (max-width:1024px){
+  .user-info{display:none}
+}
+@media (max-width:768px){
+  .header-center{display:none}
+  .header-nav{display:none}
+  .tenant-button{min-width:auto}
+  .tenant-name{display:none}
+}
+
+/* ===== MAIN CONTENT ===== */
+.container{max-width:1400px;margin:0 auto;padding:2rem 1.5rem}
+.page-header{margin-bottom:2rem;display:flex;justify-content:space-between;align-items:center}
+.page-header-left h1{font-size:1.75rem;font-weight:700;margin-bottom:0.5rem}
+.subtitle{color:var(--gray-mid);font-size:0.875rem}
+.btn-primary{background:var(--primary);color:#fff;border:none;padding:0.75rem 1.5rem;border-radius:8px;cursor:pointer;font-size:0.875rem;font-weight:600;transition:all 0.2s;display:flex;align-items:center;gap:0.5rem}
+.btn-primary:hover{background:#3730a3;transform:translateY(-1px)}
+.controls{display:flex;gap:1rem;margin-bottom:1.5rem;align-items:center}
+.view-toggle{display:flex;gap:0.25rem;background:var(--bg-white);border:1px solid var(--gray-border);border-radius:8px;padding:0.25rem;margin-left:auto}
+.view-btn{padding:0.5rem 0.75rem;border:none;background:transparent;cursor:pointer;border-radius:6px;font-size:1rem;transition:all 0.2s;color:var(--gray-mid)}
+.view-btn:hover{background:var(--bg-light);color:var(--gray-dark)}
+.view-btn.active{background:var(--primary);color:#fff}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem}
+.project-card{background:var(--bg-white);border:1px solid var(--gray-border);border-radius:12px;overflow:hidden;transition:all 0.2s;cursor:pointer}
+.project-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.project-thumb{width:100%;height:160px;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:700;color:#fff;position:relative;overflow:hidden}
+.project-thumb img{width:100%;height:100%;object-fit:cover}
+.project-thumb.placeholder{font-size:3rem}
+.project-info{padding:1.25rem}
+.project-tenant{font-size:0.75rem;color:var(--gray-mid);margin-bottom:0.5rem;font-weight:500}
+.project-title{font-size:1rem;font-weight:600;margin-bottom:0.75rem;color:#1a1a1a}
+.project-meta{display:flex;gap:1rem;font-size:0.75rem;color:var(--gray-mid);margin-bottom:1rem}
+.project-actions{display:flex;gap:0.5rem}
+.btn-small{padding:0.375rem 0.5rem;border:none;border-radius:6px;font-size:0.75rem;font-weight:500;cursor:pointer;transition:all 0.2s;flex:1;white-space:nowrap}
+.btn-view{background:#10b981;color:#fff}
+.btn-view:hover{background:#059669}
+.btn-edit{background:var(--primary);color:#fff}
+.btn-edit:hover{background:#3730a3}
+.btn-rename{background:var(--gray-light);color:var(--gray-dark)}
+.btn-rename:hover{background:var(--gray-mid);color:#fff}
+.btn-delete{background:var(--error);color:#fff}
+.btn-delete:hover{background:#dc2626}
+.projects-list{display:flex;flex-direction:column;gap:0.75rem}
+.project-row{background:var(--bg-white);border:1px solid var(--gray-border);border-radius:8px;padding:1rem 1.25rem;display:grid;grid-template-columns:60px 1fr auto auto;gap:1rem;align-items:center;transition:all 0.2s}
+.project-row:hover{box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+.project-row-thumb{width:60px;height:60px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0}
+.project-row-thumb img{width:100%;height:100%;object-fit:cover}
+.project-row-info{min-width:0}
+.project-row-title{font-size:0.9375rem;font-weight:600;margin-bottom:0.375rem;color:#1a1a1a}
+.project-row-meta{display:flex;gap:1.5rem;font-size:0.8125rem;color:var(--gray-mid)}
+.project-row-actions{display:flex;gap:0.5rem}
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--gray-mid)}
+.empty-icon{font-size:4rem;margin-bottom:1rem;opacity:0.5}
+.empty-state p{font-size:1rem}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal.show{display:flex}
+.modal-content{background:var(--bg-white);border-radius:12px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal-header{padding:1.5rem;border-bottom:1px solid var(--gray-border);display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-size:1.25rem;font-weight:600}
+.modal-close{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--gray-mid);padding:0;width:32px;height:32px;border-radius:6px;transition:all 0.2s}
+.modal-close:hover{background:var(--bg-light);color:var(--gray-dark)}
+.modal-body{padding:1.5rem}
+.form-group{margin-bottom:1.25rem}
+.form-group label{display:block;margin-bottom:0.5rem;font-size:0.875rem;font-weight:500;color:var(--gray-dark)}
+.form-group input,.form-group select{width:100%;padding:0.625rem 1rem;border:1px solid var(--gray-border);border-radius:8px;font-size:0.875rem;transition:all 0.2s}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(68,76,231,0.1)}
+.modal-footer{padding:1.5rem;border-top:1px solid var(--gray-border);display:flex;gap:0.75rem;justify-content:flex-end}
+.btn-secondary{background:var(--bg-light);color:var(--gray-dark);border:none;padding:0.625rem 1.25rem;border-radius:8px;cursor:pointer;font-size:0.875rem;font-weight:500;transition:all 0.2s}
+.btn-secondary:hover{background:var(--gray-border)}
+.message{position:fixed;top:2rem;right:2rem;padding:1rem 1.5rem;border-radius:8px;font-size:0.875rem;font-weight:500;z-index:2000;opacity:0;transform:translateX(100%);transition:all 0.3s;max-width:400px}
+.message.show{opacity:1;transform:translateX(0)}
+.message.success{background:#10b981;color:#fff}
+.message.error{background:#ef4444;color:#fff}
+.message.info{background:#3b82f6;color:#fff}
+.quiz-info{font-size:0.75rem;color:var(--gray-mid);margin-top:0.25rem;display:block}
+input[type="radio"]:checked + span{font-weight:600;color:var(--primary)}
+label:has(input[type="radio"]:checked){border-color:var(--primary);background:rgba(68,76,231,0.05)}
+
+/* Content Source Selector Styles */
+.source-selector{display:flex;gap:0.75rem;margin-top:0.5rem}
+.source-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.625rem;padding:1rem;background:var(--bg-white);border:2px solid var(--gray-border);border-radius:8px;cursor:pointer;transition:all 0.2s;font-size:0.875rem;font-weight:500;color:var(--gray-600)}
+.source-btn:hover{border-color:var(--primary);background:rgba(68,76,231,0.04)}
+.source-btn.active{border-color:var(--primary);background:rgba(68,76,231,0.08);color:var(--primary)}
+.source-icon{width:32px;height:32px;stroke-width:2}
+.source-name{font-size:0.875rem}
+.source-input-section{margin-top:1rem}
+
+/* PDF Upload Area Styles */
+.pdf-upload-area{border:2px dashed var(--gray-border);border-radius:8px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--gray-50)}
+.pdf-upload-area:hover{border-color:var(--primary);background:rgba(68,76,231,0.04)}
+.upload-placeholder{display:block}
+.upload-icon{width:48px;height:48px;margin:0 auto 1rem;color:var(--gray-400);stroke-width:2}
+.upload-text{font-size:0.9375rem;font-weight:500;color:var(--gray-dark);margin-bottom:0.5rem}
+.upload-limits{font-size:0.8125rem;color:var(--gray-mid)}
+.pdf-preview{display:flex;align-items:center;gap:1rem;padding:1rem;background:var(--gray-100);border-radius:6px;text-align:left}
+.pdf-icon{width:40px;height:40px;color:#ef4444;flex-shrink:0}
+.pdf-info{flex:1;min-width:0}
+.pdf-name{display:block;font-size:0.875rem;font-weight:600;color:var(--gray-dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:0.25rem}
+.pdf-size{font-size:0.75rem;color:var(--gray-mid)}
+.btn-remove{width:28px;height:28px;border-radius:50%;border:none;background:var(--error);color:white;cursor:pointer;font-size:1.25rem;line-height:1;flex-shrink:0;transition:all 0.2s;display:flex;align-items:center;justify-content:center;padding:0}
+.btn-remove:hover{background:#dc2626;transform:scale(1.1)}
+.form-group textarea{resize:vertical;font-family:inherit;min-height:80px;width:100%;padding:0.625rem 1rem;border:1px solid var(--gray-border);border-radius:8px;font-size:0.875rem;transition:all 0.2s}
+.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(68,76,231,0.1)}
+
+
+/* Bulk Actions Styles */
+.bulk-actions{display:flex;gap:1rem;align-items:center;padding:0.5rem 1rem;background:var(--bg-light);border:1px solid var(--gray-border);border-radius:8px}
+.checkbox-label{display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.875rem;font-weight:500;user-select:none}
+.checkbox-label input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:var(--primary)}
+.selected-count{font-size:0.875rem;color:var(--gray-mid);font-weight:500}
+.btn-danger-small{background:var(--error);color:#fff;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.875rem;font-weight:500;transition:all 0.2s}
+.btn-danger-small:hover{background:#dc2626}
+.btn-danger-small:disabled{background:var(--gray-300);cursor:not-allowed}
+.btn-secondary-small{background:var(--gray-200);color:var(--gray-dark);border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.875rem;font-weight:500;transition:all 0.2s}
+.btn-secondary-small:hover{background:var(--gray-300)}
+.project-checkbox{position:absolute;top:0.75rem;left:0.75rem;z-index:10;width:24px;height:24px;cursor:pointer;accent-color:var(--primary)}
+.project-card.bulk-mode{cursor:default}
+.project-card.bulk-mode:hover{transform:none}
+.project-card.selected{border:2px solid var(--primary);box-shadow:0 0 0 3px rgba(68,76,231,0.1)}
+.project-row-checkbox{width:24px;height:24px;cursor:pointer;accent-color:var(--primary);margin-right:0.5rem}
+
+</style>
+</head>
+<body>
+
+<!-- ===== ELEGANT HEADER ===== -->
+<header class="header">
+  <!-- Left: Logo + Nav -->
+  <div class="header-left">
+    <a href="/" class="logo">
+      <div class="logo-icon">F</div>
+      <span class="logo-text">Flipick <span class="logo-accent">Video</span></span>
+    </a>
+    <nav class="header-nav">
+      <a href="/projects" class="nav-link active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        Projects
+      </a>
+      <a href="/admin/tenants" class="nav-link" id="tenantsLink" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Tenants
+      </a>
+      <a href="/admin/users" class="nav-link" id="usersLink" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        Users
+      </a>
+    </nav>
+  </div>
+
+  <!-- Center: Search -->
+  <div class="header-center">
+    <div class="search-container">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input 
+        type="text" 
+        class="search-input" 
+        id="searchInput"
+        placeholder="Search projects..."
+        onkeyup="filterProjects()"
+      />
+      <span class="search-kbd">⌘K</span>
+    </div>
+  </div>
+
+  <!-- Right: Tenant + User -->
+  <div class="header-right">
+    <!-- Tenant Selector (shown only for super admin) -->
+    <div class="tenant-selector" id="tenantSelector" style="display:none">
+      <button class="tenant-button" id="tenantButton" onclick="toggleTenantDropdown()">
+        <div class="tenant-icon" id="tenantButtonIcon">ALL</div>
+        <span class="tenant-name" id="tenantButtonName">All Tenants</span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      <div class="tenant-dropdown" id="tenantDropdown">
+        <div class="tenant-dropdown-header">
+          <div class="tenant-dropdown-title">Organizations</div>
+        </div>
+        <div class="tenant-list" id="tenantList">
+          <!-- Tenants will be populated here -->
+        </div>
+      </div>
+    </div>
+
+    <div class="header-divider" id="divider1" style="display:none"></div>
+
+    <!-- Help Button -->
+    <button class="btn-icon" title="Help">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </button>
+
+    <div class="header-divider"></div>
+
+    <!-- User Menu -->
+    <div class="user-menu">
+      <button class="user-button" onclick="logout()">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <div class="user-info">
+          <div class="user-name" id="userName">Loading...</div>
+          <div class="user-role" id="userRole"></div>
+        </div>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div class="container">
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1>Video Projects</h1>
+      <div class="subtitle" id="subtitle">Create and manage your video projects</div>
+    </div>
+    <button class="btn-primary" onclick="openCreateModal()">
+      <span>+</span> New Project
+    </button>
+  </div>
+
+  <div class="controls">
+    <div class="view-toggle">
+      <button class="view-btn active" id="gridViewBtn" onclick="setView('grid')" title="Grid View">▦</button>
+      <button class="view-btn" id="listViewBtn" onclick="setView('list')" title="List View">☰</button>
+    </div>
+    
+    <!-- Bulk Delete Controls -->
+    <div class="bulk-actions" id="bulkActions" style="display: none;">
+      <label class="checkbox-label">
+        <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+        <span>Select All</span>
+      </label>
+      <span class="selected-count" id="selectedCount">0 selected</span>
+      <button class="btn-danger-small" onclick="deleteSelected()" id="deleteSelectedBtn">
+        🗑️ Delete Selected
+      </button>
+      <button class="btn-secondary-small" onclick="cancelSelection()">Cancel</button>
+    </div>
+    
+    <button class="btn-secondary-small" onclick="toggleBulkMode()" id="bulkModeBtn">
+      ☑️ Select Multiple
+    </button>
+  </div>
+
+  <div id="projectsContainer"></div>
+</div>
+
+<!-- ===== CREATE PROJECT MODAL ===== -->
+<div class="modal" id="createModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modalTitle">Create Project</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <form id="projectForm">
+        <input type="hidden" id="projectId">
+        <div class="form-group" id="tenantFieldGroup" style="display:none">
+          <label for="projectTenant">Tenant *</label>
+          <select id="projectTenant"></select>
+        </div>
+        <div class="form-group">
+          <label for="projectName">Project Name *</label>
+          <input type="text" id="projectName" placeholder="Enter project name" required>
+        </div>
+        
+        <!-- Image Source Selection -->
+        <div class="form-group">
+          <label>Image Source</label>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.5rem">
+            <label style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 1rem; border:1px solid var(--gray-border); border-radius:6px; cursor:pointer; flex:1; min-width:140px">
+              <input type="radio" name="imageSource" value="GlobalStock" checked style="width:auto">
+              <span style="font-size:0.875rem">Global Stock</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 1rem; border:1px solid var(--gray-border); border-radius:6px; cursor:pointer; flex:1; min-width:140px">
+              <input type="radio" name="imageSource" value="IndianStock" style="width:auto">
+              <span style="font-size:0.875rem">Indian Stock</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 1rem; border:1px solid var(--gray-border); border-radius:6px; cursor:pointer; flex:1; min-width:140px">
+              <input type="radio" name="imageSource" value="None" style="width:auto">
+              <span style="font-size:0.875rem">None</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Content Source Selector -->
+        <div class="form-group">
+          <label>Content Source *</label>
+          <div class="source-selector">
+            <button type="button" class="source-btn active" data-source="ai" onclick="selectSource('ai')">
+              <svg class="source-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+              <span class="source-name">AI Knowledge</span>
+            </button>
+            <button type="button" class="source-btn" data-source="pdf" onclick="selectSource('pdf')">
+              <svg class="source-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+              </svg>
+              <span class="source-name">PDF Document</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- AI Input Section -->
+        <div id="aiInputSection" class="source-input-section">
+          <div class="form-group">
+            <label for="topics">Topics / Context *</label>
+            <textarea id="topics" rows="4" placeholder="Enter topics or context for your video (e.g., Product features, Sales techniques, Company policies)"></textarea>
+          </div>
+        </div>
+        
+        <!-- PDF Input Section -->
+        <div id="pdfInputSection" class="source-input-section" style="display:none">
+          <div class="form-group">
+            <label for="pdfFile">Upload PDF *</label>
+            <div class="pdf-upload-area" id="pdfUploadArea">
+              <input type="file" id="pdfFile" accept=".pdf" style="display:none" onchange="handlePDFSelection(event)">
+              <div class="upload-placeholder" id="uploadPlaceholder" onclick="document.getElementById('pdfFile').click()">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p class="upload-text">Click to upload or drag & drop</p>
+                <p class="upload-limits">PDF files only • Max 10MB, 50 pages</p>
+              </div>
+              <div class="pdf-preview" id="pdfPreview" style="display:none">
+                <svg class="pdf-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                  <polyline points="14 2 14 8 20 8" fill="none" stroke="white" stroke-width="2"/>
+                </svg>
+                <div class="pdf-info">
+                  <span class="pdf-name" id="pdfName"></span>
+                  <span class="pdf-size" id="pdfSize"></span>
+                </div>
+                <button type="button" class="btn-remove" onclick="removePDF(event)">×</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="pdfContext">Additional Context (Optional)</label>
+            <textarea id="pdfContext" rows="3" placeholder="Add any specific instructions or context for how to process this PDF"></textarea>
+          </div>
+        </div>
+        
+        <!-- MCQ Assessment Section -->
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="includeQuiz" onchange="toggleQuizOptions()" style="width:auto;margin-right:0.5rem">
+            Add End-of-Video Quiz
+          </label>
+          <small class="quiz-info">Test learner understanding with AI-generated questions</small>
+        </div>
+        <div id="quizOptions" style="display:none; margin-left:20px;">
+          <div class="form-group">
+            <label for="quizCount">Number of Questions</label>
+            <select id="quizCount">
+              <option value="3">3 Questions</option>
+              <option value="5" selected>5 Questions</option>
+              <option value="7">7 Questions</option>
+              <option value="10">10 Questions</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveProject()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<div class="message" id="message"></div>
+
+<script>
+(function() {
+  const API = 'http://localhost:3000/api';
+  let token = sessionStorage.getItem('token');
+  let user = null;
+  let projects = [];
+  let allProjects = [];
+  let tenants = [];
+  let selectedTenantId = '';
+  let currentView = localStorage.getItem('projectsView') || 'grid';
+  let bulkMode = false;
+  let selectedProjects = new Set();
+  
+  if (!token) {
+    window.location.href = '/login';
+    return;
+  }
+  
+  // Keyboard shortcut for search (Cmd/Ctrl + K)
+  document.addEventListener('keydown', function(event) {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+      event.preventDefault();
+      document.getElementById('searchInput').focus();
+    }
+  });
+  
+  fetch(API + '/auth/me', {
+    headers: {'Authorization': 'Bearer ' + token}
+  })
+  .then(function(r) { 
+    if (!r.ok) throw new Error('Unauthorized');
+    return r.json(); 
+  })
+  .then(function(d) {
+    if (!d.success) throw new Error('Invalid session');
+    
+    user = d.user;
+    document.getElementById('userName').textContent = user.name;
+    document.getElementById('userRole').textContent = user.role.replace(/_/g, ' ');
+    
+    // Set user avatar initials
+    var initials = user.name.split(' ').map(function(n){ return n[0]; }).join('').substring(0,2).toUpperCase();
+    document.getElementById('userAvatar').textContent = initials;
+    
+    if (user.role === 'super_admin') {
+      document.getElementById('tenantsLink').style.display = 'flex';
+      document.getElementById('usersLink').style.display = 'flex';
+      document.getElementById('tenantSelector').style.display = 'block';
+      document.getElementById('divider1').style.display = 'block';
+      document.getElementById('subtitle').textContent = 'All projects across all tenants';
+      loadTenants();
+    }
+    
+    setView(currentView, false);
+    loadProjects();
+  })
+  .catch(function(err) {
+    console.error('Auth error:', err);
+    window.location.href = '/login';
+  });
+  
+  function loadTenants() {
+    fetch(API + '/tenants', {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success && d.tenants) {
+        tenants = d.tenants;
+        renderTenantDropdown();
+        
+        var select = document.getElementById('projectTenant');
+        select.innerHTML = '<option value="">Select tenant...</option>';
+        tenants.forEach(function(t) {
+          select.innerHTML += '<option value="' + t.id + '">' + t.name + '</option>';
+        });
+        
+        document.getElementById('tenantFieldGroup').style.display = 'block';
+      }
+    });
+  }
+  
+  function renderTenantDropdown() {
+    var html = '<div class="tenant-item active" onclick="selectTenant(\'\', \'All Tenants\', \'ALL\')">';
+    html += '<div class="tenant-item-icon">ALL</div>';
+    html += '<div class="tenant-item-info">';
+    html += '<div class="tenant-item-name">All Tenants</div>';
+    html += '<div class="tenant-item-type">View All</div>';
+    html += '</div>';
+    html += '<svg class="tenant-item-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+    html += '</div>';
+    
+    tenants.forEach(function(tenant) {
+      var initials = tenant.name.split(' ').map(function(n){return n[0]}).join('').substring(0,2).toUpperCase();
+      html += '<div class="tenant-item" onclick="selectTenant(\'' + tenant.id + '\', \'' + tenant.name + '\', \'' + initials + '\')">';
+      html += '<div class="tenant-item-icon">' + initials + '</div>';
+      html += '<div class="tenant-item-info">';
+      html += '<div class="tenant-item-name">' + tenant.name + '</div>';
+      html += '<div class="tenant-item-type">' + (tenant.plan || 'Standard') + '</div>';
+      html += '</div>';
+      html += '<svg class="tenant-item-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+      html += '</div>';
+    });
+    
+    document.getElementById('tenantList').innerHTML = html;
+  }
+  
+  window.toggleTenantDropdown = function() {
+    var button = document.getElementById('tenantButton');
+    var dropdown = document.getElementById('tenantDropdown');
+    button.classList.toggle('open');
+    dropdown.classList.toggle('open');
+  };
+  
+  window.selectTenant = function(id, name, initials) {
+    selectedTenantId = id;
+    document.getElementById('tenantButtonIcon').textContent = initials;
+    document.getElementById('tenantButtonName').textContent = name;
+    
+    document.querySelectorAll('.tenant-item').forEach(function(item) {
+      item.classList.remove('active');
+    });
+    event.currentTarget.classList.add('active');
+    
+    toggleTenantDropdown();
+    filterByTenant();
+  };
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(event) {
+    if (!event.target.closest('.tenant-selector')) {
+      var button = document.getElementById('tenantButton');
+      var dropdown = document.getElementById('tenantDropdown');
+      if (button) button.classList.remove('open');
+      if (dropdown) dropdown.classList.remove('open');
+    }
+  });
+  
+  function loadProjects() {
+    fetch(API + '/projects', {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        allProjects = d.projects || [];
+        filterProjects();
+      }
+    })
+    .catch(function(err) {
+      showMessage('Failed to load projects', 'error');
+    });
+  }
+  
+  window.filterProjects = function() {
+    var query = document.getElementById('searchInput').value.toLowerCase();
+    projects = allProjects.filter(function(p) {
+      var matchesSearch = !query || p.name.toLowerCase().includes(query);
+      var matchesTenant = !selectedTenantId || p.tenant_id === selectedTenantId;
+      return matchesSearch && matchesTenant;
+    });
+    renderProjects();
+  };
+  
+  function filterByTenant() {
+    filterProjects();
+  }
+  
+  function renderProjects() {
+    var container = document.getElementById('projectsContainer');
+    
+    if (projects.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📁</div><p>No projects found</p></div>';
+      return;
+    }
+    
+    if (currentView === 'grid') {
+      renderGridView(container);
+    } else {
+      renderListView(container);
+    }
+  }
+  
+  function renderGridView(container) {
+    var html = '<div class="projects-grid">';
+    projects.forEach(function(p) {
+      var initial = p.name.charAt(0).toUpperCase();
+      var typeLabel = p.project_type === 'scenario' ? 'Scenario' : 'Standard';
+      // Add MCQ indicator if quiz is included
+      if (p.include_quiz) {
+        typeLabel += ' + MCQ';
+      }
+      var tenantName = user.role === 'super_admin' && p.tenant_name ? p.tenant_name : '';
+      var isSelected = selectedProjects.has(p.id);
+      var cardClass = 'project-card' + (bulkMode ? ' bulk-mode' : '') + (isSelected ? ' selected' : '');
+      var onclick = bulkMode ? '' : 'onclick="openProject(\'' + p.id + '\')"';
+      
+      html += '<div class="' + cardClass + '" ' + onclick + ' data-project-id="' + p.id + '">';
+      
+      // Add checkbox if in bulk mode
+      if (bulkMode) {
+        html += '<input type="checkbox" class="project-checkbox" ' + 
+                'onchange="toggleProjectSelection(\'' + p.id + '\')" ' +
+                (isSelected ? 'checked' : '') + ' onclick="event.stopPropagation()">';
+      }
+      
+      // Show thumbnail image if available, otherwise show placeholder
+      if (p.thumbnail_url) {
+        html += '<div class="project-thumb">';
+        html += '<img src="' + p.thumbnail_url + '" alt="' + p.name + '" onerror="this.style.display=\'none\'; this.parentElement.classList.add(\'placeholder\'); this.parentElement.innerHTML=\'' + initial + '\';">';
+        html += '</div>';
+      } else {
+        html += '<div class="project-thumb placeholder">' + initial + '</div>';
+      }
+      
+      html += '<div class="project-info">';
+      if (tenantName) html += '<div class="project-tenant">' + tenantName + '</div>';
+      html += '<div class="project-title">' + p.name + '</div>';
+      html += '<div class="project-meta">';
+      html += '<span>' + typeLabel + '</span>';
+      html += '<span>' + new Date(p.created_at).toLocaleDateString() + '</span>';
+      html += '</div>';
+      
+      if (!bulkMode) {
+        html += '<div class="project-actions">';
+        html += '<button class="btn-small btn-view" onclick="openProject(\'' + p.id + '\'); event.stopPropagation()">View</button>';
+        html += '<button class="btn-small btn-edit" onclick="editProject(\'' + p.id + '\'); event.stopPropagation()">Edit</button>';
+        html += '<button class="btn-small btn-rename" onclick="renameProject(\'' + p.id + '\', event)">Rename</button>';
+        html += '<button class="btn-small btn-delete" onclick="deleteProject(\'' + p.id + '\', event)">Delete</button>';
+        html += '</div>';
+      }
+      
+      html += '</div></div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  }
+  
+  function renderListView(container) {
+    var html = '<div class="projects-list">';
+    projects.forEach(function(p) {
+      var initial = p.name.charAt(0).toUpperCase();
+      var typeLabel = p.project_type === 'scenario' ? 'Scenario' : 'Standard';
+      // Add MCQ indicator if quiz is included
+      if (p.include_quiz) {
+        typeLabel += ' + MCQ';
+      }
+      var tenantName = user.role === 'super_admin' && p.tenant_name ? p.tenant_name : '';
+      
+      html += '<div class="project-row" onclick="openProject(\'' + p.id + '\')">';
+      
+      // Show thumbnail image if available, otherwise show placeholder
+      if (p.thumbnail_url) {
+        html += '<div class="project-row-thumb">';
+        html += '<img src="' + p.thumbnail_url + '" alt="' + p.name + '" style="width:100%; height:100%; object-fit:cover; border-radius:8px;" onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'' + initial + '\';">';
+        html += '</div>';
+      } else {
+        html += '<div class="project-row-thumb">' + initial + '</div>';
+      }
+      
+      html += '<div class="project-row-info">';
+      html += '<div class="project-row-title">' + p.name + '</div>';
+      html += '<div class="project-row-meta">';
+      if (tenantName) html += '<span>' + tenantName + '</span>';
+      html += '<span>' + typeLabel + '</span>';
+      html += '<span>' + new Date(p.created_at).toLocaleDateString() + '</span>';
+      html += '</div></div>';
+      html += '<div class="project-row-actions">';
+      html += '<button class="btn-small btn-view" onclick="openProject(\'' + p.id + '\'); event.stopPropagation()">View</button>';
+      html += '<button class="btn-small btn-edit" onclick="editProject(\'' + p.id + '\'); event.stopPropagation()">Edit</button>';
+      html += '<button class="btn-small btn-rename" onclick="renameProject(\'' + p.id + '\', event)">Rename</button>';
+      html += '<button class="btn-small btn-delete" onclick="deleteProject(\'' + p.id + '\', event)">Delete</button>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  }
+  
+  window.setView = function(view, save) {
+    if (save !== false) {
+      localStorage.setItem('projectsView', view);
+    }
+    currentView = view;
+    document.getElementById('gridViewBtn').classList.toggle('active', view === 'grid');
+    document.getElementById('listViewBtn').classList.toggle('active', view === 'list');
+    renderProjects();
+  };
+  
+  window.openCreateModal = function() {
+    document.getElementById('projectId').value = '';
+    document.getElementById('projectName').value = '';
+    document.getElementById('includeQuiz').checked = false;
+    document.getElementById('quizOptions').style.display = 'none';
+    document.getElementById('modalTitle').textContent = 'Create Project';
+    
+    // Reset source selection to AI
+    selectedSource = 'ai';
+    selectedPDF = null;
+    document.getElementById('topics').value = '';
+    document.getElementById('pdfContext').value = '';
+    document.getElementById('pdfFile').value = '';
+    
+    // Reset source buttons
+    document.querySelectorAll('.source-btn').forEach(function(btn) {
+      if (btn.dataset.source === 'ai') {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+    
+    // Show AI input, hide PDF input
+    document.getElementById('aiInputSection').style.display = 'block';
+    document.getElementById('pdfInputSection').style.display = 'none';
+    document.getElementById('uploadPlaceholder').style.display = 'block';
+    document.getElementById('pdfPreview').style.display = 'none';
+    
+    document.getElementById('createModal').classList.add('show');
+  };
+  
+  window.closeModal = function() {
+    document.getElementById('createModal').classList.remove('show');
+  };
+  
+  window.toggleQuizOptions = function() {
+    var checked = document.getElementById('includeQuiz').checked;
+    document.getElementById('quizOptions').style.display = checked ? 'block' : 'none';
+  };
+  
+  // Content Source Selection
+  var selectedSource = 'ai';  // Default to AI
+  var selectedPDF = null;
+  
+  window.selectSource = function(source) {
+    selectedSource = source;
+    
+    // Update button states
+    document.querySelectorAll('.source-btn').forEach(function(btn) {
+      if (btn.dataset.source === source) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+    
+    // Show/hide appropriate input sections
+    if (source === 'ai') {
+      document.getElementById('aiInputSection').style.display = 'block';
+      document.getElementById('pdfInputSection').style.display = 'none';
+    } else if (source === 'pdf') {
+      document.getElementById('aiInputSection').style.display = 'none';
+      document.getElementById('pdfInputSection').style.display = 'block';
+    }
+  };
+  
+  // PDF File Handling
+  window.handlePDFSelection = function(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      showMessage('Please upload a PDF file', 'error');
+      event.target.value = '';
+      return;
+    }
+    
+    // Validate file size (10MB)
+    var sizeMB = file.size / 1024 / 1024;
+    if (sizeMB > 10) {
+      showMessage('PDF file is too large: ' + sizeMB.toFixed(1) + 'MB (max 10MB)', 'error');
+      event.target.value = '';
+      return;
+    }
+    
+    selectedPDF = file;
+    
+    // Show preview
+    document.getElementById('uploadPlaceholder').style.display = 'none';
+    document.getElementById('pdfPreview').style.display = 'flex';
+    document.getElementById('pdfName').textContent = file.name;
+    document.getElementById('pdfSize').textContent = sizeMB.toFixed(1) + ' MB';
+  };
+  
+  window.removePDF = function(event) {
+    event.stopPropagation();
+    selectedPDF = null;
+    document.getElementById('pdfFile').value = '';
+    document.getElementById('uploadPlaceholder').style.display = 'block';
+    document.getElementById('pdfPreview').style.display = 'none';
+  };
+  
+  // Drag and drop for PDF upload
+  document.addEventListener('DOMContentLoaded', function() {
+    var uploadArea = document.getElementById('pdfUploadArea');
+    if (uploadArea) {
+      uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.borderColor = 'var(--primary)';
+        this.style.background = 'rgba(68,76,231,0.08)';
+      });
+      
+      uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.borderColor = 'var(--gray-border)';
+        this.style.background = 'var(--gray-50)';
+      });
+      
+      uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.borderColor = 'var(--gray-border)';
+        this.style.background = 'var(--gray-50)';
+        
+        var file = e.dataTransfer.files[0];
+        if (file && file.type === 'application/pdf') {
+          document.getElementById('pdfFile').files = e.dataTransfer.files;
+          handlePDFSelection({target: {files: [file]}});
+        } else {
+          showMessage('Please upload a PDF file', 'error');
+        }
+      });
+    }
+  });
+  
+  window.saveProject = function() {
+    var projectType = 'standard';  // Always standard now
+    var name = document.getElementById('projectName').value.trim();
+    
+    if (!name) {
+      showMessage('Please enter a project name', 'error');
+      return;
+    }
+    
+    // Validate based on selected source
+    if (selectedSource === 'ai') {
+      var topics = document.getElementById('topics').value.trim();
+      if (!topics) {
+        showMessage('Please enter topics for your video', 'error');
+        return;
+      }
+    } else if (selectedSource === 'pdf') {
+      if (!selectedPDF) {
+        showMessage('Please upload a PDF file', 'error');
+        return;
+      }
+    }
+    
+    var imageSource = document.querySelector('input[name="imageSource"]:checked');
+    var imageSourceValue = imageSource ? imageSource.value : 'GlobalStock';
+    
+    var includeQuiz = document.getElementById('includeQuiz').checked;
+    var quizCount = includeQuiz ? parseInt(document.getElementById('quizCount').value) : 0;
+    
+    var data = {
+      name: name,
+      project_type: projectType,
+      image_source: imageSourceValue,
+      include_quiz: includeQuiz,
+      quiz_count: quizCount,
+      content_source_type: selectedSource  // 'ai' or 'pdf'
+    };
+    
+    if (user.role === 'super_admin') {
+      var tenantId = document.getElementById('projectTenant').value;
+      if (!tenantId) {
+        showMessage('Please select a tenant', 'error');
+        return;
+      }
+      data.tenant_id = tenantId;
+    }
+    
+    closeModal();
+    
+    var messageEl = document.getElementById('message');
+    messageEl.textContent = '🤖 Creating project...';
+    messageEl.className = 'message info show';
+    
+    fetch(API + '/projects', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      console.log('=== BACKEND RESPONSE ===');
+      console.log(JSON.stringify(d, null, 2));
+      console.log('========================');
+      
+      if (d.success && d.project && d.project.id) {
+        var projectId = d.project.id;
+        console.log('✅ Project created! ID:', projectId);
+        
+        // Handle different workflows
+        if (selectedSource === 'ai') {
+          // AI workflow: redirect to video studio to create content
+          console.log('→ AI workflow: Redirecting to video-studio...');
+          window.location.href = '/video-studio?id=' + projectId + '&mode=create';
+        } else if (selectedSource === 'pdf') {
+          // PDF workflow: upload PDF, then redirect to video-studio
+          console.log('→ PDF workflow: Uploading PDF...');
+          messageEl.textContent = '📄 Uploading PDF... Please wait.';
+          
+          var formData = new FormData();
+          formData.append('pdf', selectedPDF);
+          formData.append('projectId', projectId);
+          
+          fetch(API + '/pdf/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + token
+            },
+            body: formData
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(result) {
+            console.log('PDF upload response:', result);
+            
+            if (result.success) {
+              // PDF uploaded successfully, redirect to video-studio
+              console.log('✅ PDF uploaded, redirecting to video-studio...');
+              window.location.href = '/video-studio?id=' + projectId + '&mode=create&source=pdf';
+            } else {
+              throw new Error(result.error || 'PDF upload failed');
+            }
+          })
+          .catch(function(err) {
+            console.error('PDF upload error:', err);
+            showMessage('❌ Failed to upload PDF: ' + err.message, 'error');
+          });
+        }
+      } else {
+        throw new Error(d.error || 'Project created but ID not returned');
+      }
+    })
+    .catch(function(err) { 
+      console.error('=== ERROR ===', err);
+      showMessage('Failed: ' + err.message, 'error'); 
+    });
+  };
+  
+  window.openProject = function(id) {
+    window.location.href = '/video-studio?id=' + id;
+  };
+  
+  window.editProject = function(id) {
+    window.location.href = '/scene-editor?project=' + id;
+  };
+  
+  window.renameProject = function(id, event) {
+    event.stopPropagation();
+    var project = allProjects.find(function(p) { return p.id === id; });
+    if (!project) return;
+    
+    var name = prompt('Enter new project name:', project.name);
+    if (!name || name === project.name) return;
+    
+    fetch(API + '/projects/' + id, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: name })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        showMessage('Project renamed successfully!', 'success');
+        loadProjects();
+      } else {
+        throw new Error(d.error);
+      }
+    })
+    .catch(function(err) {
+      showMessage('Failed to rename project: ' + err.message, 'error');
+    });
+  };
+  
+  window.deleteProject = function(id, event) {
+    event.stopPropagation();
+    var project = allProjects.find(function(p) { return p.id === id; });
+    if (!project) return;
+    
+    if (!confirm('Delete project "' + project.name + '"?\n\nThis will permanently delete the project and all its scenes.')) {
+      return;
+    }
+    
+    fetch(API + '/projects/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        showMessage('Project deleted successfully!', 'success');
+        loadProjects();
+      } else {
+        throw new Error(d.error);
+      }
+    })
+    .catch(function(err) {
+      showMessage('Failed to delete project: ' + err.message, 'error');
+    });
+  };
+  
+  // Bulk Selection Functions
+  window.toggleBulkMode = function() {
+    bulkMode = !bulkMode;
+    selectedProjects.clear();
+    
+    document.getElementById('bulkActions').style.display = bulkMode ? 'flex' : 'none';
+    document.getElementById('bulkModeBtn').style.display = bulkMode ? 'none' : 'block';
+    document.getElementById('selectAll').checked = false;
+    updateSelectedCount();
+    renderProjects();
+  };
+  
+  window.cancelSelection = function() {
+    toggleBulkMode();
+  };
+  
+  window.toggleProjectSelection = function(projectId) {
+    if (selectedProjects.has(projectId)) {
+      selectedProjects.delete(projectId);
+    } else {
+      selectedProjects.add(projectId);
+    }
+    updateSelectedCount();
+    updateSelectAllCheckbox();
+    
+    // Update visual state
+    var card = document.querySelector('[data-project-id="' + projectId + '"]');
+    if (card) {
+      if (selectedProjects.has(projectId)) {
+        card.classList.add('selected');
+      } else {
+        card.classList.remove('selected');
+      }
+    }
+  };
+  
+  window.toggleSelectAll = function() {
+    var selectAllChecked = document.getElementById('selectAll').checked;
+    selectedProjects.clear();
+    
+    if (selectAllChecked) {
+      projects.forEach(function(p) {
+        selectedProjects.add(p.id);
+      });
+    }
+    
+    updateSelectedCount();
+    renderProjects();
+  };
+  
+  function updateSelectedCount() {
+    var count = selectedProjects.size;
+    document.getElementById('selectedCount').textContent = count + ' selected';
+    document.getElementById('deleteSelectedBtn').disabled = count === 0;
+  }
+  
+  function updateSelectAllCheckbox() {
+    var selectAll = document.getElementById('selectAll');
+    if (selectedProjects.size === 0) {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+    } else if (selectedProjects.size === projects.length) {
+      selectAll.checked = true;
+      selectAll.indeterminate = false;
+    } else {
+      selectAll.checked = false;
+      selectAll.indeterminate = true;
+    }
+  }
+  
+  window.deleteSelected = function() {
+    if (selectedProjects.size === 0) {
+      return;
+    }
+    
+    var count = selectedProjects.size;
+    var message = 'Delete ' + count + ' project' + (count > 1 ? 's' : '') + '?\n\n' +
+                  'This will permanently delete the selected projects and all their scenes.';
+    
+    if (!confirm(message)) {
+      return;
+    }
+    
+    var projectIds = Array.from(selectedProjects);
+    var deletePromises = projectIds.map(function(id) {
+      return fetch(API + '/projects/' + id, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      }).then(function(r) { return r.json(); });
+    });
+    
+    Promise.all(deletePromises)
+      .then(function(results) {
+        var successCount = results.filter(function(r) { return r.success; }).length;
+        var failCount = results.length - successCount;
+        
+        if (failCount === 0) {
+          showMessage('Successfully deleted ' + successCount + ' project' + (successCount > 1 ? 's' : '') + '!', 'success');
+        } else {
+          showMessage('Deleted ' + successCount + ' project(s). ' + failCount + ' failed.', 'error');
+        }
+        
+        selectedProjects.clear();
+        updateSelectedCount();
+        loadProjects();
+      })
+      .catch(function(err) {
+        showMessage('Failed to delete projects: ' + err.message, 'error');
+      });
+  };
+  
+  function showMessage(msg, type) {
+    var el = document.getElementById('message');
+    el.textContent = msg;
+    el.className = 'message ' + type;
+    el.classList.add('show');
+    var timeout = type === 'info' ? 60000 : (type === 'error' ? 5000 : 3000);
+    setTimeout(function() { el.classList.remove('show'); }, timeout);
+  }
+  
+  window.logout = function() {
+    sessionStorage.clear();
+    window.location.href = '/login';
+  };
+})();
+</script>
+</body>
+</html>

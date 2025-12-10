@@ -1,0 +1,287 @@
+<div class="video-generator">
+  <!-- Header -->
+  <div class="header">
+    <h1>🎬 Create AI Video</h1>
+    <p class="subtitle">Generate professional training videos in minutes</p>
+  </div>
+
+  <!-- Progress Steps -->
+  <div class="progress-steps">
+    <div class="step" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">
+      <div class="step-number">1</div>
+      <div class="step-label">Subject</div>
+    </div>
+    <div class="step-line" [class.active]="currentStep() > 1"></div>
+    <div class="step" [class.active]="currentStep() >= 2" [class.completed]="currentStep() > 2">
+      <div class="step-number">2</div>
+      <div class="step-label">Topics</div>
+    </div>
+    <div class="step-line" [class.active]="currentStep() > 2"></div>
+    <div class="step" [class.active]="currentStep() >= 3">
+      <div class="step-number">3</div>
+      <div class="step-label">Customize</div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="error-banner">
+      <span>⚠️ {{ error() }}</span>
+      <button (click)="error.set(null)" class="close-btn">×</button>
+    </div>
+  }
+
+  <!-- Step 1: Enter Subject -->
+  @if (currentStep() === 1) {
+    <div class="step-content">
+      <div class="form-card">
+        <h2>What's your training about?</h2>
+        
+        <div class="form-group">
+          <label for="subject">Subject *</label>
+          <input 
+            type="text" 
+            id="subject"
+            [(ngModel)]="subject"
+            placeholder="e.g., Workplace Safety, Customer Service, Leadership"
+            class="input-large"
+            (keyup.enter)="generateTopics()"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="trainingType">Training Type</label>
+          <select id="trainingType" [(ngModel)]="trainingType">
+            <option value="compliance">Compliance</option>
+            <option value="onboarding">Onboarding</option>
+            <option value="skills">Skills Development</option>
+            <option value="leadership">Leadership</option>
+            <option value="technical">Technical</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sceneCount">Number of Scenes</label>
+          <input 
+            type="number" 
+            id="sceneCount"
+            [(ngModel)]="sceneCount"
+            min="5"
+            max="30"
+          />
+        </div>
+
+        <div class="button-group">
+          <button 
+            class="btn btn-primary btn-large"
+            (click)="generateTopics()"
+            [disabled]="loadingTopics() || !subject()"
+          >
+            @if (loadingTopics()) {
+              <span class="spinner"></span> Generating Topics...
+            } @else {
+              🤖 Generate Topics with AI
+            }
+          </button>
+
+          <div class="divider">
+            <span>or</span>
+          </div>
+
+          <button 
+            class="btn btn-secondary"
+            (click)="useCustomTopics.set(true)"
+          >
+            ✏️ Paste Your Own Topics
+          </button>
+        </div>
+
+        <!-- Custom Topics Input -->
+        @if (useCustomTopics()) {
+          <div class="custom-topics-section">
+            <h3>Paste Your Topics</h3>
+            <p class="help-text">
+              Format: Topic name on its own line, subtopics with "-" prefix
+            </p>
+            <textarea 
+              [(ngModel)]="customTopicsText"
+              placeholder="Safety Basics&#10;- Equipment&#10;- Procedures&#10;Emergency Response&#10;- First Aid&#10;- Evacuation"
+              rows="10"
+            ></textarea>
+            <button 
+              class="btn btn-primary"
+              (click)="parseCustomTopics()"
+              [disabled]="!customTopicsText()"
+            >
+              Continue
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Step 2: Review & Edit Topics -->
+  @if (currentStep() === 2) {
+    <div class="step-content">
+      <div class="form-card">
+        <h2>Review & Edit Topics</h2>
+        <p class="subtitle">Customize your course structure</p>
+
+        <div class="topics-list">
+          @for (topic of topics(); track $index) {
+            <div class="topic-card">
+              <div class="topic-header">
+                <input 
+                  type="text" 
+                  [(ngModel)]="topic.name"
+                  class="topic-name-input"
+                />
+                <button 
+                  class="btn-icon btn-danger"
+                  (click)="removeTopic($index)"
+                  title="Remove topic"
+                >
+                  🗑️
+                </button>
+              </div>
+
+              <div class="subtopics">
+                @for (subtopic of topic.subtopics; track $index) {
+                  <div class="subtopic-item">
+                    <span class="bullet">-</span>
+                    <input 
+                      type="text" 
+                      [(ngModel)]="topic.subtopics[$index]"
+                      class="subtopic-input"
+                    />
+                    <button 
+                      class="btn-icon-small"
+                      (click)="removeSubtopic($index, $index)"
+                    >
+                      ×
+                    </button>
+                  </div>
+                }
+                <button 
+                  class="btn-text"
+                  (click)="addSubtopic($index)"
+                >
+                  + Add Subtopic
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <button class="btn btn-secondary" (click)="addTopic()">
+          + Add Topic
+        </button>
+
+        <div class="button-group">
+          <button class="btn btn-ghost" (click)="goBack()">
+            ← Back
+          </button>
+          <button 
+            class="btn btn-primary btn-large"
+            (click)="goToCustomization()"
+            [disabled]="topics().length === 0"
+          >
+            Continue to Customization →
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Step 3: Customize & Generate -->
+  @if (currentStep() === 3) {
+    <div class="step-content">
+      <div class="form-card">
+        <h2>Customize Your Video</h2>
+
+        <div class="form-group">
+          <label for="courseName">Course Name</label>
+          <input 
+            type="text" 
+            id="courseName"
+            [(ngModel)]="courseName"
+            [placeholder]="subject()"
+          />
+        </div>
+
+        <div class="brand-section">
+          <h3>Brand Colors</h3>
+          <div class="color-inputs">
+            <div class="color-group">
+              <label for="primaryColor">Primary Color</label>
+              <div class="color-picker">
+                <input 
+                  type="color" 
+                  id="primaryColor"
+                  [(ngModel)]="primaryColor"
+                />
+                <input 
+                  type="text" 
+                  [(ngModel)]="primaryColor"
+                  class="color-hex"
+                />
+              </div>
+            </div>
+
+            <div class="color-group">
+              <label for="secondaryColor">Secondary Color</label>
+              <div class="color-picker">
+                <input 
+                  type="color" 
+                  id="secondaryColor"
+                  [(ngModel)]="secondaryColor"
+                />
+                <input 
+                  type="text" 
+                  [(ngModel)]="secondaryColor"
+                  class="color-hex"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-box">
+          <h3>📊 Video Summary</h3>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="label">Topics:</span>
+              <span class="value">{{ topics().length }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Scenes:</span>
+              <span class="value">~{{ sceneCount() }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Duration:</span>
+              <span class="value">~{{ sceneCount() * 15 / 60 | number:'1.0-0' }} min</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn btn-ghost" (click)="goBack()">
+            ← Back
+          </button>
+          <button 
+            class="btn btn-primary btn-large"
+            (click)="generateVideo()"
+            [disabled]="generatingVideo()"
+          >
+            @if (generatingVideo()) {
+              <span class="spinner"></span> Generating Video...
+            } @else {
+              🎬 Create Video
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

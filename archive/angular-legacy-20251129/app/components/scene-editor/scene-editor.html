@@ -1,0 +1,139 @@
+<div class="scene-editor">
+  <!-- Header -->
+  <header class="editor-header">
+    <button class="btn-back" (click)="goBack()">← Dashboard</button>
+    <div class="project-info" *ngIf="project">
+      <h1>{{ project.title }}</h1>
+      <span class="scene-count">{{ scenes.length }} scenes</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="saveScene()" [disabled]="saving">
+        {{ saving ? 'Saving...' : '💾 Save' }}
+      </button>
+      <button class="btn-primary" (click)="previewVideo()">
+        ▶️ Preview Video
+      </button>
+    </div>
+  </header>
+
+  <div class="editor-content" *ngIf="!loading">
+    <!-- Scene List Sidebar -->
+    <aside class="scene-sidebar">
+      <h3>Scenes</h3>
+      <div class="scene-list">
+        <div 
+          class="scene-item"
+          *ngFor="let scene of scenes; let i = index"
+          [class.active]="selectedIndex === i"
+          (click)="selectScene(scene, i)"
+        >
+          <span class="scene-number">{{ scene.order }}</span>
+          <span class="scene-title">{{ scene.title }}</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Editor -->
+    <main class="editor-main" *ngIf="selectedScene">
+      <!-- Preview Panel -->
+      <div class="preview-panel">
+        <div class="preview-header">
+          <h3>Preview</h3>
+          <div class="preview-nav">
+            <button (click)="previousScene()" [disabled]="selectedIndex === 0">←</button>
+            <span>{{ selectedIndex + 1 }} / {{ scenes.length }}</span>
+            <button (click)="nextScene()" [disabled]="selectedIndex === scenes.length - 1">→</button>
+          </div>
+        </div>
+        <div class="preview-frame" [ngStyle]="getPreviewStyle()">
+  <div class="preview-content" [ngStyle]="getContentStyle()">
+    <h2 class="preview-title" [ngStyle]="getTitleStyle()">{{ selectedScene.title }}</h2>
+    <p class="preview-text" [ngStyle]="getTextStyle()">{{ selectedScene.content }}</p>
+  </div>
+</div>
+      </div>
+
+      <!-- Edit Panel -->
+      <div class="edit-panel">
+        <div class="edit-section">
+          <div class="section-header">
+            <h3>Title</h3>
+          </div>
+          <input 
+            type="text" 
+            [(ngModel)]="selectedScene.title"
+            (blur)="saveScene()"
+          />
+        </div>
+
+        <div class="edit-section">
+          <div class="section-header">
+            <h3>Content</h3>
+            <button class="btn-regenerate" (click)="regenerateContent()" [disabled]="regenerating">
+              🔄 Regenerate
+            </button>
+          </div>
+          <textarea 
+            [(ngModel)]="selectedScene.content"
+            rows="8"
+            (blur)="saveScene()"
+          ></textarea>
+          <span class="char-count">{{ selectedScene.content?.length || 0 }} characters</span>
+        </div>
+
+        <div class="edit-section">
+          <div class="section-header">
+            <h3>Design</h3>
+            <button class="btn-regenerate" (click)="regenerateDesign()" [disabled]="regenerating">
+              🎨 New Design
+            </button>
+          </div>
+          
+          <div class="design-controls" *ngIf="selectedScene.design">
+            <div class="design-row">
+              <label>Background</label>
+              <input 
+                type="color" 
+                [(ngModel)]="selectedScene.design.backgroundColor"
+                (change)="saveScene()"
+              />
+            </div>
+            <div class="design-row">
+              <label>Text Color</label>
+              <input 
+                type="color" 
+                [(ngModel)]="selectedScene.design.textColor"
+                (change)="saveScene()"
+              />
+            </div>
+            <div class="design-row">
+              <label>Font</label>
+              <select [(ngModel)]="selectedScene.design.fontFamily" (change)="saveScene()">
+                <option value="Inter">Inter</option>
+                <option value="Playfair Display">Playfair Display</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Montserrat">Montserrat</option>
+                <option value="Open Sans">Open Sans</option>
+              </select>
+            </div>
+            <div class="design-row">
+              <label>Animation</label>
+              <select [(ngModel)]="selectedScene.design.animation" (change)="saveScene()">
+                <option value="fadeIn">Fade In</option>
+                <option value="slideUp">Slide Up</option>
+                <option value="zoomIn">Zoom In</option>
+                <option value="typewriter">Typewriter</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading project...</p>
+  </div>
+</div>

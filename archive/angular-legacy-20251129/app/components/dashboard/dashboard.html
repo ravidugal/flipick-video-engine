@@ -1,0 +1,66 @@
+<div class="dashboard">
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="header-content">
+      <h1>🎬 Flipick AI Video Studio</h1>
+      <p class="subtitle">Create engaging educational videos with AI</p>
+    </div>
+    <div class="header-actions">
+      <span class="api-status" [class.connected]="apiConnected">
+        {{ apiConnected ? '🟢 API Connected' : '🔴 API Disconnected' }}
+      </span>
+      <button class="btn-primary" (click)="createNewProject()">
+        + New Project
+      </button>
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading projects...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-container" *ngIf="error && !loading">
+    <p class="error-message">{{ error }}</p>
+    <button class="btn-secondary" (click)="loadProjects()">Retry</button>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && !error && projects.length === 0">
+    <div class="empty-icon">🎥</div>
+    <h2>No projects yet</h2>
+    <p>Create your first AI-powered video project!</p>
+    <button class="btn-primary btn-large" (click)="createNewProject()">
+      Create Your First Project
+    </button>
+  </div>
+
+  <!-- Projects Grid -->
+  <div class="projects-grid" *ngIf="!loading && !error && projects.length > 0">
+    <div 
+      class="project-card" 
+      *ngFor="let project of projects"
+      (click)="openProject(project)"
+    >
+      <div class="project-thumbnail">
+        <span class="thumbnail-icon">🎬</span>
+      </div>
+      <div class="project-info">
+        <h3 class="project-title">{{ project.title }}</h3>
+        <p class="project-prompt">{{ project.prompt }}</p>
+        <div class="project-meta">
+          <span class="scene-count">{{ project.sceneCount }} scenes</span>
+          <span class="project-date">{{ formatDate(project.createdAt) }}</span>
+        </div>
+        <span class="project-status" [ngClass]="getStatusClass(project.status)">
+          {{ project.status }}
+        </span>
+      </div>
+      <button class="btn-delete" (click)="deleteProject(project, $event)">
+        🗑️
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,79 @@
+<div class="video-preview">
+  <!-- Header -->
+  <header class="preview-header">
+    <button class="btn-back" (click)="goBack()">← Back to Editor</button>
+    <div class="project-title" *ngIf="project">
+      <h1>{{ project.title }}</h1>
+      <span class="preview-badge">Preview Mode</span>
+    </div>
+    <button class="btn-dashboard" (click)="goToDashboard()">Dashboard</button>
+  </header>
+
+  <!-- Main Preview Area -->
+  <main class="preview-main">
+    <div class="video-container">
+      <!-- Video Frame -->
+      <div class="video-frame" [ngStyle]="getPreviewStyle()" *ngIf="currentScene">
+        <div class="scene-content" [class.animate]="isPlaying">
+          <h2 class="scene-title">{{ currentScene.title }}</h2>
+          <p class="scene-text">{{ currentScene.content }}</p>
+        </div>
+        
+        <div class="scene-indicator">
+          Scene {{ currentSceneIndex + 1 }} of {{ scenes.length }}
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="video-controls">
+        <div class="progress-section">
+          <span class="time-current">{{ formatTime(currentTime) }}</span>
+          <div class="progress-bar-container">
+            <div class="progress-bar" [style.width.%]="getOverallProgress()"></div>
+            <div class="scene-markers">
+              <div 
+                class="scene-marker"
+                *ngFor="let scene of scenes; let i = index"
+                [style.left.%]="(i / scenes.length) * 100"
+                [class.active]="i <= currentSceneIndex"
+                (click)="goToScene(i)"
+              ></div>
+            </div>
+          </div>
+          <span class="time-total">{{ formatTime(totalDuration) }}</span>
+        </div>
+
+        <div class="control-buttons">
+          <button class="btn-control" (click)="previousScene()" [disabled]="currentSceneIndex === 0">
+            ⏮️
+          </button>
+          <button class="btn-play" (click)="isPlaying ? pause() : play()">
+            {{ isPlaying ? '⏸️' : '▶️' }}
+          </button>
+          <button class="btn-control" (click)="nextScene()" [disabled]="currentSceneIndex >= scenes.length - 1">
+            ⏭️
+          </button>
+          <button class="btn-control" (click)="stop()">
+            ⏹️
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene Thumbnails -->
+    <div class="scene-thumbnails">
+      <div 
+        class="thumbnail"
+        *ngFor="let scene of scenes; let i = index"
+        [class.active]="i === currentSceneIndex"
+        [class.played]="i < currentSceneIndex"
+        (click)="goToScene(i)"
+      >
+        <div class="thumbnail-preview" [style.background-color]="scene.design?.backgroundColor || '#1a1a2e'">
+          <span class="thumbnail-number">{{ i + 1 }}</span>
+        </div>
+        <span class="thumbnail-title">{{ scene.title }}</span>
+      </div>
+    </div>
+  </main>
+</div>

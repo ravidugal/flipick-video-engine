@@ -1,0 +1,518 @@
+<div class="generator-container">
+  <!-- Header -->
+  <header class="generator-header">
+    <div class="header-content">
+      <div class="logo">
+        <span class="logo-icon">🎬</span>
+        <span class="logo-text">Cinematic Video Generator</span>
+      </div>
+      <div class="header-actions">
+        <span class="badge">L&D Training</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Progress Bar -->
+  <div class="progress-container">
+    <div class="progress-bar">
+      <div class="progress-fill" [style.width]="getProgressWidth()"></div>
+    </div>
+    <div class="step-indicators">
+      <button 
+        *ngFor="let step of wizardSteps" 
+        class="step-indicator"
+        [class.active]="currentStep === step.id"
+        [class.completed]="step.completed"
+        (click)="goToStep(step.id)">
+        <span class="step-icon">{{ step.icon }}</span>
+        <span class="step-title">{{ step.title }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="generator-main">
+    <form [formGroup]="configForm">
+      
+      <!-- Step 1: Industry & Category -->
+      <section class="wizard-step" *ngIf="currentStep === 1">
+        <div class="step-header">
+          <h2>Select Industry & Training Type</h2>
+          <p>Choose the industry context and type of training video you want to create</p>
+        </div>
+
+        <div class="form-section">
+          <h3>Industry</h3>
+          <div class="option-grid">
+            <label 
+              *ngFor="let industry of industries" 
+              class="option-card"
+              [class.selected]="configForm.get('industry')?.value === industry.value">
+              <input 
+                type="radio" 
+                formControlName="industry" 
+                [value]="industry.value">
+              <span class="option-icon">{{ industry.icon }}</span>
+              <span class="option-label">{{ industry.label }}</span>
+              <span class="option-desc">{{ industry.description }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Training Category</h3>
+          <div class="option-grid compact">
+            <label 
+              *ngFor="let category of categories" 
+              class="option-card small"
+              [class.selected]="configForm.get('category')?.value === category.value">
+              <input 
+                type="radio" 
+                formControlName="category" 
+                [value]="category.value">
+              <span class="option-icon">{{ category.icon }}</span>
+              <span class="option-label">{{ category.label }}</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 2: Voice Selection -->
+      <section class="wizard-step" *ngIf="currentStep === 2">
+        <div class="step-header">
+          <h2>Voice Configuration</h2>
+          <p>Select the language and voice for your video narration</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-section half">
+            <h3>Language</h3>
+            <div class="select-wrapper">
+              <select formControlName="language" class="form-select">
+                <option *ngFor="let lang of languages" [value]="lang.code">
+                  {{ lang.name }} ({{ lang.nativeName }})
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-section half">
+            <h3>Voice Style</h3>
+            <div class="select-wrapper">
+              <select formControlName="voicePreset" class="form-select">
+                <option *ngFor="let preset of voicePresets" [value]="preset">
+                  {{ preset | titlecase }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Select Voice</h3>
+          <div class="voice-grid">
+            <label 
+              *ngFor="let voice of availableVoices" 
+              class="voice-card"
+              [class.selected]="configForm.get('voiceId')?.value === voice.voiceId">
+              <input 
+                type="radio" 
+                formControlName="voiceId" 
+                [value]="voice.voiceId">
+              <div class="voice-info">
+               <span class="voice-name">{{ voice.voiceName }}</span>
+              <span class="voice-desc">{{ voice.voiceId }}</span>
+              </div>
+              <span class="voice-check">✓</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="voice-preview-box">
+            <button 
+              type="button" 
+              class="btn btn-secondary"
+              (click)="isVoicePreviewPlaying ? stopVoicePreview() : previewVoice()"
+              [disabled]="!configForm.get('voiceId')?.value">
+              <span *ngIf="!isVoicePreviewPlaying">🔊 Preview Voice</span>
+              <span *ngIf="isVoicePreviewPlaying">⏹️ Stop Preview</span>
+            </button>
+            <audio #audioPreview></audio>
+            <p class="hint">Hear how your selected voice sounds</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 3: Content & Scenes -->
+      <section class="wizard-step" *ngIf="currentStep === 3">
+        <div class="step-header">
+          <h2>Video Content</h2>
+          <p>Name your project and arrange your scenes</p>
+        </div>
+
+        <div class="form-section">
+          <h3>Project Details</h3>
+          <div class="form-group">
+            <label for="projectName">Project Name *</label>
+            <input 
+              type="text" 
+              id="projectName" 
+              formControlName="projectName" 
+              class="form-input"
+              placeholder="e.g., Workplace Safety Training 2025">
+            <span class="error" *ngIf="configForm.get('projectName')?.invalid && configForm.get('projectName')?.touched">
+              Project name is required (min 3 characters)
+            </span>
+          </div>
+          <div class="form-group">
+            <label for="projectDescription">Description (optional)</label>
+            <textarea 
+              id="projectDescription" 
+              formControlName="projectDescription" 
+              class="form-textarea"
+              rows="2"
+              placeholder="Brief description of your training video"></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="section-header">
+            <h3>Scenes ({{ scenes.length }})</h3>
+            <span class="hint">Drag to reorder • Click to edit</span>
+          </div>
+
+          <div class="scene-list">
+            <div 
+              *ngFor="let scene of scenes; let i = index; trackBy: trackBySceneIndex"
+              class="scene-item"
+              [class.editing]="editingSceneIndex === i">
+              
+              <!-- Scene Preview Mode -->
+              <div class="scene-preview" *ngIf="editingSceneIndex !== i">
+                <div class="scene-drag">⋮⋮</div>
+                <div class="scene-type-badge">{{ scene.type }}</div>
+                <div class="scene-info">
+                  <span class="scene-title">{{ scene.title }}</span>
+                  <span class="scene-subtitle">{{ scene.content.headline || scene.content.chapterTag }}</span>
+                </div>
+                <div class="scene-actions">
+                  <button type="button" class="icon-btn" (click)="moveScene(i, 'up')" [disabled]="i === 0" title="Move up">↑</button>
+                  <button type="button" class="icon-btn" (click)="moveScene(i, 'down')" [disabled]="i === scenes.length - 1" title="Move down">↓</button>
+                  <button type="button" class="icon-btn" (click)="editScene(i)" title="Edit">✏️</button>
+                  <button type="button" class="icon-btn" (click)="duplicateScene(i)" title="Duplicate">📋</button>
+                  <button type="button" class="icon-btn danger" (click)="removeScene(i)" [disabled]="scenes.length <= 1" title="Remove">🗑️</button>
+                </div>
+              </div>
+
+              <!-- Scene Edit Mode -->
+              <div class="scene-editor" *ngIf="editingSceneIndex === i">
+                <div class="editor-header">
+                  <h4>Edit {{ scene.type | titlecase }} Scene</h4>
+                  <button type="button" class="btn btn-sm" (click)="saveScene()">Done</button>
+                </div>
+                
+                <div class="editor-fields">
+                  <div class="form-group">
+                    <label>Scene Title</label>
+                    <input type="text" [(ngModel)]="scene.title" [ngModelOptions]="{standalone: true}" class="form-input">
+                  </div>
+                  
+                  <div class="form-group" *ngIf="scene.content.chapterTag !== undefined">
+                    <label>Chapter Tag</label>
+                    <input type="text" [(ngModel)]="scene.content.chapterTag" [ngModelOptions]="{standalone: true}" class="form-input">
+                  </div>
+                  
+                  <div class="form-group" *ngIf="scene.content.headline !== undefined">
+                    <label>Headline</label>
+                    <input type="text" [(ngModel)]="scene.content.headline" [ngModelOptions]="{standalone: true}" class="form-input">
+                  </div>
+                  
+                  <div class="form-group" *ngIf="scene.content.subtitle !== undefined">
+                    <label>Subtitle</label>
+                    <input type="text" [(ngModel)]="scene.content.subtitle" [ngModelOptions]="{standalone: true}" class="form-input">
+                  </div>
+
+                  <div class="form-group" *ngIf="scene.content.bulletPoints">
+                    <label>Bullet Points (one per line)</label>
+                    <textarea 
+                      class="form-textarea" 
+                      rows="4"
+                      [ngModel]="scene.content.bulletPoints?.join('\n')"
+                      (ngModelChange)="updateBulletPoints(scene, $event)"
+                      [ngModelOptions]="{standalone: true}"></textarea>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label>Voice-Over Script</label>
+                    <textarea 
+                      [(ngModel)]="scene.content.voiceOverScript" 
+                      [ngModelOptions]="{standalone: true}" 
+                      class="form-textarea"
+                      rows="3"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add Scene -->
+          <div class="add-scene-section">
+            <h4>Add Scene</h4>
+            <div class="scene-preset-grid">
+              <button 
+                *ngFor="let preset of scenePresets; trackBy: trackByPreset"
+                type="button"
+                class="preset-btn"
+                (click)="addScene(preset)">
+                <span class="preset-icon">{{ preset.icon }}</span>
+                <span class="preset-label">{{ preset.title }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Step 4: Branding -->
+      <section class="wizard-step" *ngIf="currentStep === 4">
+        <div class="step-header">
+          <h2>Brand Customization</h2>
+          <p>Apply your brand colors and logo to the video</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-section half">
+            <h3>Brand Colors</h3>
+            <div class="color-inputs">
+              <div class="form-group">
+                <label for="primaryColor">Primary Color</label>
+                <div class="color-input-wrapper">
+                  <input 
+                    type="color" 
+                    id="primaryColor" 
+                    formControlName="primaryColor" 
+                    class="color-input">
+                  <input 
+                    type="text" 
+                    [value]="configForm.get('primaryColor')?.value"
+                    (input)="configForm.patchValue({primaryColor: $any($event.target).value})"
+                    class="form-input color-text">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="accentColor">Accent Color</label>
+                <div class="color-input-wrapper">
+                  <input 
+                    type="color" 
+                    id="accentColor" 
+                    formControlName="accentColor" 
+                    class="color-input">
+                  <input 
+                    type="text" 
+                    [value]="configForm.get('accentColor')?.value"
+                    (input)="configForm.patchValue({accentColor: $any($event.target).value})"
+                    class="form-input color-text">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section half">
+            <h3>Company Details</h3>
+            <div class="form-group">
+              <label for="companyName">Company Name</label>
+              <input 
+                type="text" 
+                id="companyName" 
+                formControlName="companyName" 
+                class="form-input"
+                placeholder="Your Company Name">
+            </div>
+            <div class="form-group">
+              <label for="logoUrl">Logo URL (optional)</label>
+              <input 
+                type="url" 
+                id="logoUrl" 
+                formControlName="logoUrl" 
+                class="form-input"
+                placeholder="https://example.com/logo.png">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Color Preview</h3>
+          <div class="color-preview-card" 
+               [style.background]="'linear-gradient(135deg, ' + configForm.get('primaryColor')?.value + ', ' + configForm.get('accentColor')?.value + ')'">
+            <div class="preview-content">
+              <span class="preview-tag">TRAINING MODULE</span>
+              <h4>{{ configForm.get('projectName')?.value || 'Your Project Title' }}</h4>
+              <p>Preview of your brand colors</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Available Themes</h3>
+          <div class="theme-grid">
+            <button 
+              *ngFor="let theme of availableThemes"
+              type="button"
+              class="theme-card"
+              (click)="configForm.patchValue({primaryColor: theme.config.colors.accent, accentColor: theme.config.colors.accentSecondary})">
+              <div class="theme-preview" 
+                   [style.background]="'linear-gradient(135deg, ' + theme.config.colors.accent + ', ' + theme.config.colors.accentSecondary + ')'">
+              </div>
+              <span class="theme-name">{{ theme.config.name }}</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Step 5: Generate -->
+      <section class="wizard-step" *ngIf="currentStep === 5">
+        <div class="step-header">
+          <h2>Generate Your Video</h2>
+          <p>Review your configuration and generate your cinematic training video</p>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary-card">
+          <h3>Configuration Summary</h3>
+          
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="summary-label">Project</span>
+              <span class="summary-value">{{ configForm.get('projectName')?.value }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Industry</span>
+              <span class="summary-value">{{ getSelectedIndustry()?.icon }} {{ getSelectedIndustry()?.label }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Category</span>
+              <span class="summary-value">{{ getSelectedCategory()?.icon }} {{ getSelectedCategory()?.label }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Language</span>
+              <span class="summary-value">{{ getSelectedLanguage()?.name }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Voice</span>
+              <span class="summary-value">{{ getSelectedVoice()?.voiceName || 'Default' }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">Scenes</span>
+              <span class="summary-value">{{ scenes.length }} scenes</span>
+            </div>
+          </div>
+
+          <div class="summary-scenes">
+            <h4>Scene Order</h4>
+            <div class="scene-flow">
+              <span *ngFor="let scene of scenes; let last = last" class="flow-item">
+                {{ scene.title }}<span *ngIf="!last" class="flow-arrow">→</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="form-section">
+          <h3>Video Settings</h3>
+          <div class="settings-grid">
+            <label class="toggle-setting">
+              <input type="checkbox" formControlName="enableVoiceOver">
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">Enable Voice-Over</span>
+            </label>
+            <label class="toggle-setting">
+              <input type="checkbox" formControlName="enableKenBurns">
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">Ken Burns Effect</span>
+            </label>
+            <label class="toggle-setting">
+              <input type="checkbox" formControlName="enableFilmGrain">
+              <span class="toggle-slider"></span>
+              <span class="toggle-label">Film Grain Overlay</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Generate Button -->
+        <div class="generate-section">
+          <button 
+            type="button"
+            class="btn btn-primary btn-large"
+            (click)="generateVideo()"
+            [disabled]="isGenerating || configForm.invalid">
+            <span *ngIf="!isGenerating">🎬 Generate Cinematic Video</span>
+            <span *ngIf="isGenerating">⏳ Generating...</span>
+          </button>
+          <p class="hint">This will create a standalone HTML file with your video</p>
+        </div>
+      </section>
+
+    </form>
+  </main>
+
+  <!-- Footer Navigation -->
+  <footer class="generator-footer">
+    <button 
+      type="button" 
+      class="btn btn-secondary"
+      (click)="previousStep()"
+      [disabled]="currentStep === 1">
+      ← Previous
+    </button>
+    
+    <div class="step-counter">
+      Step {{ currentStep }} of {{ totalSteps }}
+    </div>
+    
+    <button 
+      type="button" 
+      class="btn btn-primary"
+      (click)="nextStep()"
+      *ngIf="currentStep < totalSteps">
+      Next →
+    </button>
+    
+    <button 
+      type="button" 
+      class="btn btn-primary"
+      (click)="generateVideo()"
+      *ngIf="currentStep === totalSteps"
+      [disabled]="isGenerating || configForm.invalid">
+      Generate 🎬
+    </button>
+  </footer>
+
+  <!-- Generation Progress Overlay -->
+  <div class="progress-overlay" *ngIf="isGenerating">
+    <div class="progress-modal">
+      <div class="progress-spinner"></div>
+      <h3>{{ generationProgress.message || 'Generating your video...' }}</h3>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" [style.width.%]="generationProgress.progress"></div>
+      </div>
+      <span class="progress-percent">{{ generationProgress.progress }}%</span>
+    </div>
+  </div>
+
+  <!-- Preview Modal -->
+  <div class="preview-modal" *ngIf="isPreviewOpen">
+    <div class="preview-header">
+      <h3>🎬 {{ configForm.get('projectName')?.value }}</h3>
+      <div class="preview-actions">
+        <button type="button" class="btn btn-secondary" (click)="copyHTML()">📋 Copy HTML</button>
+        <button type="button" class="btn btn-secondary" (click)="openInNewTab()">↗️ Open in Tab</button>
+        <button type="button" class="btn btn-primary" (click)="downloadHTML()">⬇️ Download</button>
+        <button type="button" class="btn btn-close" (click)="closePreview()">✕</button>
+      </div>
+    </div>
+    <div class="preview-content">
+      <iframe #previewFrame class="preview-frame"></iframe>
+    </div>
+  </div>
+
+</div>

@@ -1,11 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from './config/env';
-
 // Import routes
 import aiRoutes from './routes/ai.routes';
 import projectRoutes from './routes/project.routes';
 import pexelsRoutes from './routes/pexels.routes';
+import adminRoutes from './routes/admin.routes';
 
 const app = express();
 
@@ -26,6 +26,7 @@ app.get('/health', (req, res) => {
 app.use('/api/ai', aiRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/pexels', pexelsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res) => {

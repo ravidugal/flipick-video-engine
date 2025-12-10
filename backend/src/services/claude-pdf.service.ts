@@ -31,9 +31,28 @@ export class ClaudePDFService {
     sceneCount: number,
     additionalContext?: string
   ): Promise<Topic[]> {
-    console.log(`🤖 Extracting ${sceneCount} topics from PDF...`);
+    console.log(`🤖 Extracting topics for ${sceneCount} total scenes from PDF...`);
 
     const pdfBase64 = pdfBuffer.toString('base64');
+
+    // Calculate optimal topic/subtopic distribution (same logic as AI service)
+    const contentScenes = Math.max(sceneCount, 5);
+    
+    let topicCount: number;
+    let subtopicsPerTopic: number;
+    
+    if (contentScenes <= 10) {
+      topicCount = Math.ceil(contentScenes / 3);
+      subtopicsPerTopic = Math.ceil(contentScenes / topicCount);
+    } else if (contentScenes <= 20) {
+      topicCount = Math.ceil(contentScenes / 4);
+      subtopicsPerTopic = Math.ceil(contentScenes / topicCount);
+    } else {
+      topicCount = Math.ceil(contentScenes / 5);
+      subtopicsPerTopic = Math.ceil(contentScenes / topicCount);
+    }
+
+    console.log(`  → Generating ${topicCount} topics with ~${subtopicsPerTopic} subtopics each`);
 
     const systemPrompt = `You are a precise content extractor for educational video creation.
 
@@ -43,12 +62,15 @@ CRITICAL RULES:
 3. Extract topics that will make compelling video scenes
 4. Cite page numbers for all facts`;
 
-    let userPrompt = `Extract exactly ${sceneCount} main topics from this PDF document for video creation.
+    let userPrompt = `Extract exactly ${topicCount} main topics from this PDF document for video creation.
+
+IMPORTANT: Generate ${topicCount} topics (NOT ${sceneCount} topics!), each with approximately ${subtopicsPerTopic} subtopics.
+Total scenes calculation: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content scenes) ≈ ${sceneCount} scenes
 
 For each topic, provide:
 1. Topic title (concise, 5-8 words)
 2. Description (2-3 sentences using ONLY content from the PDF)
-3. Key keywords (3-5 words for visual search)
+3. Key keywords (${subtopicsPerTopic} keywords, one per subtopic)
 4. Page number(s) where discussed
 
 Format as JSON array:
@@ -56,7 +78,7 @@ Format as JSON array:
   {
     "title": "Topic title",
     "description": "Description from PDF",
-    "keywords": ["keyword1", "keyword2", "keyword3"],
+    "keywords": ["subtopic1", "subtopic2", "subtopic3"],
     "pageNumbers": [5, 6]
   }
 ]`;
@@ -101,7 +123,7 @@ Format as JSON array:
 
       const topics = JSON.parse(jsonMatch[0]);
 
-      console.log(`✅ Extracted ${topics.length} topics from PDF`);
+      console.log(`✅ Extracted ${topics.length} topics (target: ${topicCount})`);
       return topics;
     } catch (error) {
       console.error('❌ Error extracting topics from PDF:', error);
@@ -123,29 +145,30 @@ Format as JSON array:
 CRITICAL RULES:
 1. Use ONLY information from the provided PDF
 2. Create engaging, professional video scene content
-3. Content should be suitable for voice-over narration`;
+3. Keep ALL text VERY concise and brief`;
 
     let userPrompt = `Create content for a video scene about: "${topic.title}"
 
 Reference pages: ${topic.pageNumbers.join(', ')}
-Context: ${topic.description}
 
-Generate:
-1. Scene title
-2. Body text (2-3 paragraphs, using ONLY PDF content)
-3. Narration script (natural spoken form)
-4. 3-5 bullet points (key takeaways)
-5. Layout: choose from: 'fulltext', 'bullets', 'cards', 'stat', 'quote'
-6. Keywords for visual search (3-5 words)
+Generate CONCISE content:
+1. Title (8 words max)
+2. Body text: Write 1-2 SHORT sentences ONLY (max 25 words total)
+3. Narration: Natural voice-over script (2-3 sentences)
+4. Bullets: Generate 3 brief points ONLY (each under 8 words)
+5. Layout: choose from 'fulltext', 'bullets', 'cards', 'stat', 'quote'
+6. Keywords: 3-5 words for images
 
-Format as JSON:
+CRITICAL: Keep text VERY short. Body should be 1-2 sentences maximum.
+
+Return JSON:
 {
-  "title": "Scene title",
-  "body": "Body paragraphs",
+  "title": "Brief title",
+  "body": "One or two short sentences",
   "narration": "Natural spoken script",
-  "bullets": ["Point 1", "Point 2", "Point 3"],
+  "bullets": ["Brief point", "Brief point", "Brief point"],
   "layout": "bullets",
-  "keywords": ["keyword1", "keyword2"]
+  "keywords": ["word1", "word2"]
 }`;
 
     if (additionalContext) {

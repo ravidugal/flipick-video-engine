@@ -24,7 +24,7 @@ export class PDFUploadService {
   }
 
   async uploadPDF(file: Buffer, tenantId: string, userId: string): Promise<PDFUploadResult> {
-    console.log(`📄 Uploading PDF for tenant: ${tenantId}, user: ${userId}`);
+    console.log('📄 Uploading PDF for tenant: ' + tenantId + ', user: ' + userId);
     
     const validation = await this.validatePDF(file);
     if (!validation.valid) {
@@ -33,9 +33,9 @@ export class PDFUploadService {
 
     const hash = crypto.randomBytes(16).toString('hex');
     const timestamp = Date.now();
-    const filename = `${tenantId}/${userId}/${timestamp}-${hash}.pdf`;
+    const filename = tenantId + '/' + userId + '/' + timestamp + '-' + hash + '.pdf';
 
-    console.log(`→ GCS path: ${filename}`);
+    console.log('→ GCS path: ' + filename);
 
     const blob = this.bucket.file(filename);
     
@@ -73,7 +73,7 @@ export class PDFUploadService {
     if (sizeMB > 10) {
       return {
         valid: false,
-        error: `PDF too large: ${sizeMB.toFixed(2)}MB (max 10MB)`,
+        error: 'PDF too large: ' + sizeMB.toFixed(2) + 'MB (max 10MB)',
         pageCount: 0
       };
     }
@@ -94,17 +94,37 @@ export class PDFUploadService {
     if (pageCount > 50) {
       return {
         valid: false,
-        error: `PDF has ${pageCount} pages (max 50 pages)`,
+        error: 'PDF has ' + pageCount + ' pages (max 50 pages)',
         pageCount
       };
     }
 
-    console.log(`✅ PDF validated: ${sizeMB.toFixed(2)}MB, ${pageCount} pages`);
+    console.log('✅ PDF validated: ' + sizeMB.toFixed(2) + 'MB, ' + pageCount + ' pages');
 
     return {
       valid: true,
       pageCount
     };
+  }
+
+  async getPDF(gcsPath: string): Promise<Buffer> {
+    console.log('📥 Downloading PDF from GCS: ' + gcsPath);
+    const blob = this.bucket.file(gcsPath);
+    const [content] = await blob.download();
+    console.log('✅ PDF downloaded: ' + content.length + ' bytes');
+    return content;
+  }
+
+  async deletePDF(gcsPath: string): Promise<void> {
+    const blob = this.bucket.file(gcsPath);
+    await blob.delete();
+    console.log('🗑️ Deleted PDF from GCS: ' + gcsPath);
+  }
+
+  async pdfExists(gcsPath: string): Promise<boolean> {
+    const blob = this.bucket.file(gcsPath);
+    const [exists] = await blob.exists();
+    return exists;
   }
 }
 

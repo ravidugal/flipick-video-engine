@@ -56,19 +56,214 @@ export class ClaudeService {
       const prompt = `Create a training course outline for: ${subject}
 Training type: ${trainingType}
 
-IMPORTANT: Generate exactly ${topicCount} main topics with approximately ${subtopicsPerTopic} subtopics each.
-The total number of topics + subtopics MUST equal exactly ${contentScenes} scenes.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
 
-Structure guideline:
-- Each main topic counts as 1 scene
-- Each subtopic counts as 1 scene
-- Total scenes needed: ${contentScenes}
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
 
-Example for ${contentScenes} scenes with ${topicCount} topics:
-Topic 1 (1 scene) + ${subtopicsPerTopic} subtopics = ${subtopicsPerTopic + 1} scenes
-Repeat for ${topicCount} topics to reach ${contentScenes} total
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
+CRITICAL: Generate EXACTLY ${topicCount} main topics, each with APPROXIMATELY ${subtopicsPerTopic} subtopics.
+MATH VERIFICATION: ${topicCount} topics × (1 chapter + ${subtopicsPerTopic} content) = ${topicCount} × ${subtopicsPerTopic + 1} = ${topicCount * (subtopicsPerTopic + 1)} scenes (target: ${contentScenes})
+
+CONCRETE EXAMPLE - If user requests 15 scenes:
+  - Generate 3 topics (NOT 15 topics!)
+  - Each topic has 1 chapter scene + 4 subtopic scenes = 5 scenes per topic
+  - Total: 3 topics × 5 scenes = 15 scenes ✓
+
+FOR YOUR TASK (${contentScenes} scenes total):
+  - Generate ${topicCount} topics
+  - Each topic needs ${subtopicsPerTopic} subtopics
+  - Verification: ${topicCount} topics × ${subtopicsPerTopic + 1} scenes each ≈ ${contentScenes} total
+
+Return ONLY valid JSON:
+{"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2"]}]}
+NO markdown, NO code blocks, ONLY JSON.
 {"topics":[{"name":"Topic Name","subtopics":["Subtopic 1","Subtopic 2","Subtopic 3"]}]}
 
 NO markdown, NO code blocks, NO explanatory text - ONLY the JSON object.`;

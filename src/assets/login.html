@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Flipick Video Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#444ce7 0%,#849bff 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.login-card{background:#fff;border-radius:16px;padding:3rem;box-shadow:0 20px 60px rgba(0,0,0,0.15);width:100%;max-width:420px}
+.logo{text-align:center;margin-bottom:2rem}
+.logo-icon{width:64px;height:64px;background:linear-gradient(135deg,#444ce7,#849bff);border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:2rem;margin:0 auto 1rem}
+.logo-text{font-size:1.5rem;font-weight:700;color:#1a1a1a}
+.logo-text span{color:#444ce7}
+h1{font-size:1.25rem;font-weight:600;color:#1a1a1a;margin-bottom:0.5rem;text-align:center}
+.subtitle{font-size:0.875rem;color:#7b8fa2;text-align:center;margin-bottom:2rem}
+.form-group{margin-bottom:1.25rem}
+label{display:block;font-size:0.875rem;font-weight:500;color:#545454;margin-bottom:0.5rem}
+input{width:100%;padding:0.75rem 1rem;background:#f8f9fb;border:1px solid #e2e4e9;border-radius:8px;font-size:0.875rem;font-family:inherit}
+input:focus{outline:none;border-color:#444ce7;background:#fff}
+button{width:100%;padding:0.875rem;background:#444ce7;color:#fff;border:none;border-radius:8px;font-size:0.875rem;font-weight:600;cursor:pointer;margin-top:0.5rem}
+button:hover{background:#3538c9}
+button:disabled{opacity:0.5;cursor:not-allowed}
+.message{padding:0.875rem;border-radius:8px;margin-bottom:1rem;font-size:0.875rem;display:none}
+.message.show{display:block}
+.message.error{background:#fee;color:#c00;border:1px solid #fcc}
+.message.success{background:#efe;color:#080;border:1px solid #cfc}
+.link{display:block;text-align:center;margin-top:1.5rem;padding:0.75rem;background:#444ce7;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;display:none}
+.link.show{display:block}
+.link:hover{background:#3538c9}
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="logo">
+    <div class="logo-icon">F</div>
+    <div class="logo-text">Flipick <span>Video Studio</span></div>
+  </div>
+  
+  <h1>Welcome Back</h1>
+  <p class="subtitle">Sign in to your account</p>
+  
+  <div class="message" id="message"></div>
+  
+  <div class="form-group">
+    <label>Email</label>
+    <input type="email" id="email" value="admin@flipick.com" autocomplete="email">
+  </div>
+  
+  <div class="form-group">
+    <label>Password</label>
+    <input type="password" id="password" value="Flipick@2025" autocomplete="current-password">
+  </div>
+  
+  <button id="loginBtn">Sign In</button>
+  
+  <a href="#" class="link" id="continueLink">Continue →</a>
+</div>
+
+<script>
+(function() {
+  const API = 'http://localhost:3000/api';
+  const btn = document.getElementById('loginBtn');
+  const msg = document.getElementById('message');
+  const link = document.getElementById('continueLink');
+  
+  btn.onclick = async function() {
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+    msg.className = 'message';
+    
+    try {
+      const res = await fetch(API + '/auth/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (data.success && data.token) {
+        sessionStorage.setItem('token', data.token);
+        sessionStorage.setItem('user', JSON.stringify(data.user));
+        
+        msg.textContent = '✓ Login successful!';
+        msg.className = 'message success show';
+        btn.textContent = 'Success!';
+        
+        // Determine redirect URL based on role
+        let redirectUrl = '/';
+        let linkText = 'Continue to Studio →';
+        
+        if (data.user.role === 'super_admin') {
+          redirectUrl = '/admin/tenants';
+          linkText = 'Continue to Admin Dashboard →';
+        } else if (data.user.role === 'tenant_admin') {
+          redirectUrl = '/projects';
+          linkText = 'Continue to Projects →';
+        } else {
+          redirectUrl = '/projects';
+          linkText = 'Continue to Projects →';
+        }
+        
+        // Update link
+        link.href = redirectUrl;
+        link.textContent = linkText;
+        link.className = 'link show';
+        
+        // Try auto-redirect
+        setTimeout(function() {
+          window.location.href = redirectUrl;
+        }, 300);
+        
+      } else {
+        throw new Error(data.error || 'Login failed');
+      }
+    } catch (err) {
+      msg.textContent = '✗ ' + err.message;
+      msg.className = 'message error show';
+      btn.disabled = false;
+      btn.textContent = 'Sign In';
+    }
+  };
+  
+  // Allow Enter key
+  document.getElementById('password').onkeypress = function(e) {
+    if (e.key === 'Enter') btn.click();
+  };
+  
+  // Check if already logged in
+  const token = sessionStorage.getItem('token');
+  if (token) {
+    fetch(API + '/auth/me', {
+      headers: {'Authorization': 'Bearer ' + token}
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success && d.user) {
+        // Already logged in, redirect
+        let url = '/projects';
+        if (d.user.role === 'super_admin') url = '/admin/tenants';
+        window.location.href = url;
+      }
+    })
+    .catch(function() {
+      // Token invalid, clear it
+      sessionStorage.clear();
+    });
+  }
+})();
+</script>
+</body>
+</html>

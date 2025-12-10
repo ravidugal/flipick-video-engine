@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scene Editor - Flipick Video Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary: #444ce7;
+  --primary-light: #849bff;
+  --gray-dark: #545454;
+  --gray-mid: #7b8fa2;
+  --gray-border: #e2e4e9;
+  --bg-white: #fff;
+  --bg-light: #f8f9fb;
+  --bg-page: #f0f2f5;
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-page);
+  color: #1a1a1a;
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  background: var(--bg-white);
+  border-bottom: 1px solid var(--gray-border);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.back-link {
+  color: var(--gray-mid);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.back-link:hover {
+  color: var(--primary);
+}
+
+.project-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Container */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* Page Header */
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  color: var(--gray-mid);
+  font-size: 0.9rem;
+}
+
+.scene-count {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* Scene Grid */
+.scenes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.scene-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-white);
+  border-radius: 12px;
+  border: 1px solid var(--gray-border);
+  overflow: hidden;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.scene-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+  border-color: var(--primary-light);
+}
+
+.scene-header {
+  padding: 0.75rem 1rem;
+  background: var(--bg-light);
+  border-bottom: 1px solid var(--gray-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scene-number {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.scene-type {
+  font-size: 0.7rem;
+  color: var(--gray-mid);
+  background: var(--bg-white);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.scene-thumbnail {
+  width: 100%;
+  height: 180px;
+  background: #000;
+  position: relative;
+  overflow: hidden;
+}
+
+.scene-thumbnail img,
+.scene-thumbnail video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scene-gradient {
+  width: 100%;
+  height: 100%;
+}
+
+.scene-overlay-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+}
+
+.scene-content {
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.scene-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.scene-body {
+  font-size: 0.8rem;
+  color: var(--gray-dark);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.scene-meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.7rem;
+  color: var(--gray-mid);
+  margin-bottom: 0.75rem;
+}
+
+.scene-footer {
+  margin-top: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  flex: 1;
+}
+
+.btn-primary:hover {
+  background: #3538c9;
+}
+
+.btn-secondary {
+  background: var(--bg-light);
+  color: var(--gray-dark);
+  border: 1px solid var(--gray-border);
+}
+
+.btn-secondary:hover {
+  background: var(--gray-border);
+}
+
+.btn-full {
+  width: 100%;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--gray-border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Edit Panel */
+.edit-panel {
+  position: fixed;
+  top: 0;
+  right: -500px;
+  width: 500px;
+  height: 100vh;
+  background: var(--bg-white);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+  z-index: 200;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+}
+
+.edit-panel.active {
+  right: 0;
+}
+
+.panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 199;
+  display: none;
+}
+
+.panel-overlay.active {
+  display: block;
+}
+
+.panel-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--gray-border);
+  position: sticky;
+  top: 0;
+  background: var(--bg-white);
+  z-index: 10;
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.panel-subtitle {
+  font-size: 0.85rem;
+  color: var(--gray-mid);
+}
+
+.close-panel {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--bg-light);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-dark);
+  font-size: 1.2rem;
+}
+
+.close-panel:hover {
+  background: var(--gray-border);
+}
+
+.panel-body {
+  padding: 1.5rem;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+}
+
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--gray-dark);
+  margin-bottom: 0.4rem;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-light);
+  border: 1px solid var(--gray-border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  color: #1a1a1a;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--bg-white);
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.char-count {
+  font-size: 0.7rem;
+  color: var(--gray-mid);
+  margin-top: 0.25rem;
+  text-align: right;
+}
+
+.panel-actions {
+  padding: 1.5rem;
+  border-top: 1px solid var(--gray-border);
+  position: sticky;
+  bottom: 0;
+  background: var(--bg-white);
+  display: flex;
+  gap: 0.75rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--gray-mid);
+}
+
+/* Pexels Search */
+.search-box {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-box .form-input {
+  flex: 1;
+}
+
+.btn-search {
+  white-space: nowrap;
+  padding: 0.6rem 1rem;
+}
+
+.asset-preview {
+  width: 100%;
+  height: 120px;
+  background: var(--bg-light);
+  border: 1px solid var(--gray-border);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-mid);
+  font-size: 0.85rem;
+}
+
+.asset-preview img,
+.asset-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.asset-preview.gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.pexels-results {
+  margin-top: 1rem;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--gray-border);
+}
+
+.results-count {
+  font-size: 0.85rem;
+  color: var(--gray-dark);
+  font-weight: 500;
+}
+
+.results-filter {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.filter-btn {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  background: var(--bg-light);
+  border: 1px solid var(--gray-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--gray-dark);
+}
+
+.filter-btn:hover {
+  background: var(--gray-border);
+}
+
+.filter-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.result-item {
+  position: relative;
+  height: 120px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.result-item:hover {
+  border-color: var(--primary-light);
+  transform: scale(1.02);
+}
+
+.result-item.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.result-item img,
+.result-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.result-badge {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.result-check {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  background: var(--primary);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+}
+
+.result-item.selected .result-check {
+  display: flex;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 2rem;
+  color: var(--gray-mid);
+}
+/* Preview Modal */
+.preview-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1000;display:none}
+.preview-overlay.active{display:block}
+.preview-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:90vw;height:80vh;background:#000;border-radius:12px;z-index:1001;display:none;overflow:hidden}
+.preview-modal.active{display:block}
+.preview-viewport{width:100%;height:calc(100% - 60px);position:relative;overflow:hidden}
+.preview-close{position:absolute;top:1rem;right:1rem;z-index:10;width:40px;height:40px;background:rgba(0,0,0,0.7);border:none;border-radius:50%;color:#fff;font-size:1.5rem;cursor:pointer}
+.preview-close:hover{background:rgba(0,0,0,0.9)}
+.preview-controls{height:60px;display:flex;align-items:center;justify-content:center;gap:1rem;padding:1rem;background:#1a1a1a}
+.preview-scene{position:absolute;top:0;left:0;width:100%;height:100%}
+.preview-bg{position:absolute;top:0;left:0;width:100%;height:100%}
+.preview-bg video,.preview-bg img{width:100%;height:100%;object-fit:cover}
+.preview-content{position:absolute;bottom:8%;left:5%;right:5%;color:#fff;z-index:10}
+.preview-title{font-family:var(--font-display);font-size:2rem;font-weight:600;margin-bottom:0.5rem;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,0.9)}
+.preview-body{font-size:1rem;line-height:1.7;color:rgba(255,255,255,0.95);max-width:600px;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+.preview-bullets{list-style:none;margin-top:0.75rem}
+.preview-bullets li{padding:0.4rem 0 0.4rem 1.5rem;position:relative;font-size:0.9rem;color:#fff}
+.preview-bullets li:before{content:"";position:absolute;left:0;top:0.7rem;width:8px;height:8px;background:var(--primary-light);border-radius:50%}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <a href="/projects" class="back-link">← Back to Projects</a>
+    <span class="project-name" id="projectName">Loading...</span>
+  </div>
+</div>
+
+<!-- Main Container -->
+<div class="container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">Scene Editor</h1>
+    <p class="page-subtitle">Edit individual scenes and rebuild your video • <span class="scene-count" id="sceneCount">0 scenes</span></p>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Loading scenes...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" id="empty" style="display: none;">
+    <p>No scenes found in this project.</p>
+  </div>
+
+  <!-- Scenes Grid -->
+  <div class="scenes-grid" id="scenesGrid"></div>
+</div>
+
+<!-- Edit Panel Overlay -->
+<div class="panel-overlay" id="panelOverlay" onclick="closeEditPanel()"></div>
+
+<!-- Edit Panel -->
+<div class="edit-panel" id="editPanel">
+  <div class="panel-header">
+    <h2 class="panel-title">Edit Scene</h2>
+    <p class="panel-subtitle" id="panelSubtitle">Scene #1</p>
+    <button class="close-panel" onclick="closeEditPanel()">✕</button>
+  </div>
+  
+  <div class="panel-body">
+    <!-- Content Section -->
+    <div class="form-section">
+      <span class="section-label">📝 Content</span>
+      
+      <div class="form-group">
+        <label class="form-label">Scene Title</label>
+        <input type="text" class="form-input" id="editTitle" placeholder="Enter scene title">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Body Text</label>
+        <textarea class="form-textarea" id="editBody" placeholder="Enter scene body text"></textarea>
+        <div class="char-count"><span id="bodyCharCount">0</span> characters</div>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Eyebrow Text (Optional)</label>
+        <input type="text" class="form-input" id="editEyebrow" placeholder="Small text above title">
+      </div>
+    </div>
+
+    <!-- Visual Section -->
+    <div class="form-section">
+      <span class="section-label">🎨 Visual</span>
+      
+      <div class="form-group">
+        <label class="form-label">Layout Type</label>
+        <select class="form-select" id="editLayout">
+          <option value="fulltext">Full Text</option>
+          <option value="bullets">Bullets</option>
+          <option value="cards2">2 Cards</option>
+          <option value="cards3">3 Cards</option>
+          <option value="cards4">4 Cards</option>
+          <option value="stat">Statistic</option>
+          <option value="quote">Quote</option>
+          <option value="timeline">Timeline</option>
+          <option value="iconlist">Icon List</option>
+          <option value="split">Split Screen</option>
+        </select>
+      </div>
+      
+      <!-- Current Asset Preview -->
+      <div class="form-group">
+        <label class="form-label">Current Asset</label>
+        <div id="currentAssetPreview" class="asset-preview"></div>
+      </div>
+      
+      <!-- Pexels Search -->
+      <div class="form-group">
+        <label class="form-label">Search Pexels for New Asset</label>
+        <div class="search-box">
+          <input type="text" class="form-input" id="pexelsSearch" placeholder="e.g., business meeting, nature, technology" onkeypress="if(event.key==='Enter') searchPexels()">
+          <button class="btn btn-primary btn-search" onclick="searchPexels()">🔍 Search</button>
+        </div>
+      </div>
+      
+      <!-- Search Results -->
+      <div id="pexelsResults" class="pexels-results" style="display: none;">
+        <div class="results-header">
+          <span class="results-count" id="resultsCount">0 results</span>
+          <div class="results-filter">
+            <button class="filter-btn active" data-type="all" onclick="filterResults('all')">All</button>
+            <button class="filter-btn" data-type="video" onclick="filterResults('video')">Videos</button>
+            <button class="filter-btn" data-type="image" onclick="filterResults('image')">Images</button>
+          </div>
+        </div>
+        <div id="resultsGrid" class="results-grid"></div>
+      </div>
+      
+      <!-- Selected Asset URL (hidden) -->
+      <input type="hidden" id="editAssetUrl">
+    </div>
+
+    <!-- Voice-Over Section -->
+    <div class="form-section">
+      <span class="section-label">🎤 Voice-Over</span>
+      
+      <div class="form-group">
+        <label class="form-label">Voice-Over Script</label>
+        <textarea class="form-textarea" id="editVoScript" placeholder="Script for voice-over narration"></textarea>
+        <div class="char-count"><span id="voCharCount">0</span> characters</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel Actions -->
+  <div class="panel-actions">
+    <button class="btn btn-secondary" onclick="closeEditPanel()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveScene()">Save Changes</button>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000/api';
+let projectId = null;
+let scenes = [];
+let currentEditingSceneIndex = null;
+
+// Get project ID from URL
+function getProjectId() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('project') || params.get('id');
+}
+
+// Load project and scenes
+async function loadProject() {
+  projectId = getProjectId();
+  
+  if (!projectId) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('empty').style.display = 'block';
+    document.getElementById('empty').innerHTML = '<p>No project ID provided.</p>';
+    return;
+  }
+
+  try {
+    console.log('Loading project:', projectId);
+    
+    // Fetch project details (includes scenes in response)
+    const token = localStorage.getItem("token");
+    const projectRes = await fetch(`${API}/projects/${projectId}`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    const projectData = await projectRes.json();
+    
+    if (!projectData.success) {
+      throw new Error('Failed to load project');
+    }
+    
+    const project = projectData.project;
+    document.getElementById('projectName').textContent = project.name || project.course_name || 'Untitled Project';
+    
+    // Extract scenes from project response
+    scenes = project.scenes || [];
+    console.log('Loaded scenes:', scenes.length);
+    
+    document.getElementById('sceneCount').textContent = `${scenes.length} scene${scenes.length !== 1 ? 's' : ''}`;
+    
+    if (scenes.length === 0) {
+      document.getElementById('empty').style.display = 'block';
+    } else {
+      renderScenes();
+    }
+    
+  } catch (error) {
+    console.error('Error loading project:', error);
+    alert('Failed to load project: ' + error.message);
+    document.getElementById('empty').style.display = 'block';
+    document.getElementById('empty').innerHTML = '<p>Error loading project.</p>';
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+// Render scenes grid
+function renderScenes() {
+  const grid = document.getElementById('scenesGrid');
+  let html = '';
+  
+  scenes.forEach((scene, i) => {
+    const title = scene.title || 'Untitled Scene';
+    const body = scene.body || scene.narration || '';
+    const layout = scene.layout || 'fulltext';
+    const url = scene.asset_url || '';
+    const type = scene.scene_type || 'scene';
+    
+    // Determine asset type from bg_type
+    let aType = 'Gradient';
+    if (scene.bg_type === 'video') {
+      aType = 'Video';
+    } else if (scene.bg_type === 'image') {
+      aType = 'Image';
+    }
+    
+    // Get gradient from scene
+    const grad = scene.gradient || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    
+    html += `<div class="scene-card">`;
+    html += `<div class="scene-header">`;
+    html += `<span class="scene-number">Scene ${i + 1}</span>`;
+    html += `<span class="scene-type">${type}</span>`;
+    html += `</div>`;
+    html += `<div class="scene-thumbnail">`;
+    
+    if (url) {
+      if (aType === 'Video') {
+        html += `<video src="${url}" muted></video>`;
+      } else {
+        html += `<img src="${url}" alt="Scene ${i + 1}">`;
+      }
+    } else {
+      html += `<div class="scene-gradient" style="background: ${grad}"></div>`;
+    }
+    
+    html += `<span class="scene-overlay-badge">${aType}</span>`;
+    html += `</div>`;
+    html += `<div class="scene-content">`;
+    html += `<div class="scene-title">${title}</div>`;
+    
+    if (body) {
+      const truncated = body.length > 150 ? body.substring(0, 150) + '...' : body;
+      html += `<div class="scene-body">${truncated}</div>`;
+    }
+    
+    html += `<div class="scene-meta">`;
+    html += `<span>📊 ${layout}</span>`;
+    if (url) {
+      html += `<span>🎬 ${aType}</span>`;
+    }
+    html += `</div>`;
+    html += `<div class="scene-footer">`;
+    html += `<button class="btn btn-secondary" onclick="event.stopPropagation(); previewScene(${i})" style="flex: 0.5;">▶️ Preview</button>`;
+    html += `<button class="btn btn-primary" onclick="event.stopPropagation(); openEditPanel(${i})" style="flex: 1;">Edit Scene</button>`;
+    html += `</div>`;
+    html += `</div>`;
+    html += `</div>`;
+  });
+  
+  grid.innerHTML = html;
+}
+
+// Open edit panel
+function openEditPanel(index) {
+  currentEditingSceneIndex = index;
+  const scene = scenes[index];
+  
+  // Populate form - use narration or body
+  document.getElementById('panelSubtitle').textContent = `Scene #${index + 1} - ${scene.scene_type || 'Scene'}`;
+  document.getElementById('editTitle').value = scene.title || '';
+  
+  // For body, show bullets if layout is bullets, cards if cards, etc.
+  let bodyContent = scene.body || '';
+  if (scene.bullets && Array.isArray(scene.bullets)) {
+    bodyContent = scene.bullets.join('\n• ');
+  } else if (scene.cards && Array.isArray(scene.cards)) {
+    bodyContent = scene.cards.map(c => `${c.title}: ${c.desc}`).join('\n\n');
+  } else if (scene.timeline_items && Array.isArray(scene.timeline_items)) {
+    bodyContent = scene.timeline_items.map(t => `${t.year}: ${t.event}`).join('\n\n');
+  } else if (scene.icon_items && Array.isArray(scene.icon_items)) {
+    bodyContent = scene.icon_items.map(i => `${i.icon} ${i.title}: ${i.desc}`).join('\n\n');
+  }
+  
+  document.getElementById('editBody').value = bodyContent;
+  document.getElementById('editEyebrow').value = scene.eyebrow || '';
+  document.getElementById('editLayout').value = scene.layout || 'fulltext';
+  document.getElementById('editAssetUrl').value = scene.asset_url || '';
+  
+  // Voice-over script - use narration field
+  const voScript = scene.narration || scene.body || '';
+  document.getElementById('editVoScript').value = voScript;
+  
+  // Show current asset preview
+  showCurrentAsset(scene);
+  
+  // Clear previous search results
+  document.getElementById('pexelsResults').style.display = 'none';
+  document.getElementById('pexelsSearch').value = '';
+  
+  updateCharCounts();
+  
+  // Show panel
+  document.getElementById('editPanel').classList.add('active');
+  document.getElementById('panelOverlay').classList.add('active');
+}
+
+// Show current asset preview
+function showCurrentAsset(scene) {
+  const preview = document.getElementById('currentAssetPreview');
+  const url = scene.asset_url;
+  const bgType = scene.bg_type;
+  
+  if (url && bgType === 'video') {
+    preview.innerHTML = `<video src="${url}" muted autoplay loop></video>`;
+    preview.classList.remove('gradient');
+  } else if (url && bgType === 'image') {
+    preview.innerHTML = `<img src="${url}" alt="Current asset">`;
+    preview.classList.remove('gradient');
+  } else if (scene.gradient) {
+    preview.innerHTML = `<span>Gradient Background</span>`;
+    preview.style.background = scene.gradient;
+    preview.classList.add('gradient');
+  } else {
+    preview.innerHTML = `<span>No asset • Gradient will be used</span>`;
+    preview.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    preview.classList.add('gradient');
+  }
+}
+
+// Close edit panel
+function closeEditPanel() {
+  document.getElementById('editPanel').classList.remove('active');
+  document.getElementById('panelOverlay').classList.remove('active');
+  currentEditingSceneIndex = null;
+  selectedAsset = null;
+  pexelsSearchResults = [];
+  currentFilter = 'all';
+}
+
+// Update character counts
+function updateCharCounts() {
+  const bodyLength = document.getElementById('editBody').value.length;
+  const voLength = document.getElementById('editVoScript').value.length;
+  
+  document.getElementById('bodyCharCount').textContent = bodyLength;
+  document.getElementById('voCharCount').textContent = voLength;
+}
+
+// Listen for input changes
+document.getElementById('editBody').addEventListener('input', updateCharCounts);
+document.getElementById('editVoScript').addEventListener('input', updateCharCounts);
+
+// Save scene changes
+async function saveScene() {
+  if (currentEditingSceneIndex === null) return;
+  
+  const sceneId = scenes[currentEditingSceneIndex].id;
+  const assetUrl = document.getElementById('editAssetUrl').value;
+  
+  // Determine bg_type and asset_type based on selected asset
+  let bgType = 'gradient';
+  let assetType = null;
+  
+  if (assetUrl && selectedAsset) {
+    bgType = selectedAsset.type === 'video' ? 'video' : 'image';
+    assetType = selectedAsset.type;
+  } else if (assetUrl) {
+    // If URL but no selectedAsset, guess from URL
+    if (assetUrl.includes('.mp4') || assetUrl.includes('video')) {
+      bgType = 'video';
+      assetType = 'video';
+    } else {
+      bgType = 'image';
+      assetType = 'image';
+    }
+  }
+  
+  const updatedScene = {
+    title: document.getElementById('editTitle').value,
+    body: document.getElementById('editBody').value,
+    eyebrow: document.getElementById('editEyebrow').value,
+    layout: document.getElementById('editLayout').value,
+    asset_url: assetUrl || null,
+    bg_type: bgType,
+    asset_type: assetType,
+    narration: document.getElementById('editVoScript').value
+  };
+  
+  try {
+    const response = await fetch(`${API}/projects/${projectId}/scenes/${sceneId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedScene)
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Update local scene data
+      Object.assign(scenes[currentEditingSceneIndex], updatedScene);
+      
+      // Re-render grid
+      renderScenes();
+      
+      // Close panel
+      closeEditPanel();
+      
+      alert('Scene updated successfully!');
+    } else {
+      alert('Failed to save scene: ' + (data.message || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Error saving scene:', error);
+    alert('Error saving scene: ' + error.message);
+  }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', loadProject);
+
+// Pexels search state
+let pexelsSearchResults = [];
+let currentFilter = 'all';
+let selectedAsset = null;
+
+// Search Pexels for assets
+async function searchPexels() {
+  const query = document.getElementById('pexelsSearch').value.trim();
+  
+  if (!query) {
+    alert('Please enter a search term');
+    return;
+  }
+  
+  const resultsDiv = document.getElementById('pexelsResults');
+  const gridDiv = document.getElementById('resultsGrid');
+  
+  // Show loading
+  resultsDiv.style.display = 'block';
+  gridDiv.innerHTML = '<div class="loading-spinner">🔍 Searching Pexels...</div>';
+  
+  try {
+    // Search both videos and images
+    const [videosRes, imagesRes] = await Promise.all([
+      fetch(`${API}/pexels/videos?query=${encodeURIComponent(query)}&per_page=10`),
+      fetch(`${API}/pexels/images?query=${encodeURIComponent(query)}&per_page=10`)
+    ]);
+    
+    const videos = await videosRes.json();
+    const images = await imagesRes.json();
+    
+    // Combine results
+    pexelsSearchResults = [];
+    
+    // Add videos
+    if (videos && Array.isArray(videos)) {
+      videos.forEach(v => {
+        if (v.video_files && v.video_files.length > 0) {
+          // Find HD video file
+          const hdVideo = v.video_files.find(f => f.quality === 'hd' || f.width >= 1280) || v.video_files[0];
+          pexelsSearchResults.push({
+            id: v.id,
+            type: 'video',
+            url: hdVideo.link,
+            thumbnail: v.image,
+            width: hdVideo.width,
+            height: hdVideo.height
+          });
+        }
+      });
+    }
+    
+    // Add images
+    if (images && Array.isArray(images)) {
+      images.forEach(img => {
+        pexelsSearchResults.push({
+          id: img.id,
+          type: 'image',
+          url: img.src.large || img.src.original,
+          thumbnail: img.src.medium,
+          width: img.width,
+          height: img.height
+        });
+      });
+    }
+    
+    console.log('Search results:', pexelsSearchResults);
+    
+    if (pexelsSearchResults.length === 0) {
+      gridDiv.innerHTML = '<div class="loading-spinner">No results found. Try different keywords.</div>';
+      return;
+    }
+    
+    // Display results
+    displayResults();
+    
+  } catch (error) {
+    console.error('Search error:', error);
+    gridDiv.innerHTML = '<div class="loading-spinner">❌ Search failed. Please try again.</div>';
+  }
+}
+
+// Display Pexels results
+function displayResults() {
+  const gridDiv = document.getElementById('resultsGrid');
+  const countSpan = document.getElementById('resultsCount');
+  
+  // Filter results
+  let filtered = pexelsSearchResults;
+  if (currentFilter !== 'all') {
+    filtered = pexelsSearchResults.filter(r => r.type === currentFilter);
+  }
+  
+  countSpan.textContent = `${filtered.length} result${filtered.length !== 1 ? 's' : ''}`;
+  
+  if (filtered.length === 0) {
+    gridDiv.innerHTML = '<div class="loading-spinner">No results for this filter.</div>';
+    return;
+  }
+  
+  let html = '';
+  filtered.forEach(result => {
+    const isSelected = selectedAsset && selectedAsset.id === result.id;
+    const selectedClass = isSelected ? 'selected' : '';
+    const escapedUrl = result.url.replace(/'/g, "\\'");
+    
+    html += `<div class="result-item ${selectedClass}" onclick="selectAsset(${result.id}, '${result.type}', '${escapedUrl}')">`;
+    
+    if (result.type === 'video') {
+      html += `<video src="${result.url}" muted></video>`;
+      html += `<span class="result-badge">VIDEO</span>`;
+    } else {
+      html += `<img src="${result.thumbnail}" alt="Result ${result.id}">`;
+      html += `<span class="result-badge">IMAGE</span>`;
+    }
+    
+    html += `<span class="result-check">✓</span>`;
+    html += `</div>`;
+  });
+  
+  gridDiv.innerHTML = html;
+}
+
+// Filter results by type
+function filterResults(type) {
+  currentFilter = type;
+  
+  // Update filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.type === type) {
+      btn.classList.add('active');
+    }
+  });
+  
+  displayResults();
+}
+
+// Select an asset
+function selectAsset(id, type, url) {
+  selectedAsset = { id, type, url };
+  
+  // Update hidden input
+  document.getElementById('editAssetUrl').value = url;
+  
+  // Update visual feedback
+  document.querySelectorAll('.result-item').forEach(item => {
+    item.classList.remove('selected');
+  });
+  
+  // Add selected class to clicked item
+  event.currentTarget.classList.add('selected');
+  
+  // Update preview
+  const preview = document.getElementById('currentAssetPreview');
+  preview.classList.remove('gradient');
+  preview.style.background = '';
+  
+  if (type === 'video') {
+    preview.innerHTML = `<video src="${url}" muted autoplay loop></video>`;
+  } else {
+    preview.innerHTML = `<img src="${url}" alt="Selected asset">`;
+  }
+}
+
+// Preview functionality
+let previewAudio = null;
+
+function previewScene(index) {
+  const scene = scenes[index];
+  const viewport = document.getElementById('previewViewport');
+  
+  // Build preview HTML
+  let html = '<div class="preview-scene">';
+  
+  // Background
+  html += '<div class="preview-bg">';
+  if (scene.bg_type === 'video' && scene.asset_url) {
+    html += `<video src="${scene.asset_url}" autoplay loop muted></video>`;
+  } else if (scene.bg_type === 'image' && scene.asset_url) {
+    html += `<img src="${scene.asset_url}">`;
+  } else if (scene.gradient) {
+    html += `<div style="width:100%;height:100%;background:${scene.gradient}"></div>`;
+  } else {
+    html += '<div style="width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#312e81)"></div>';
+  }
+  html += '</div>';
+  
+  // Overlay
+  html += '<div style="position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.7) 30%,rgba(0,0,0,0.4) 60%,rgba(0,0,0,0.3) 100%)"></div>';
+  
+  // Content
+  html += '<div class="preview-content">';
+  if (scene.title) html += `<h2 class="preview-title">${scene.title}</h2>`;
+  if (scene.body) html += `<p class="preview-body">${scene.body}</p>`;
+  if (scene.bullets && scene.bullets.length) {
+    html += '<ul class="preview-bullets">';
+    scene.bullets.forEach(b => html += `<li>${b}</li>`);
+    html += '</ul>';
+  }
+  html += '</div>';
+  html += '</div>';
+  
+  viewport.innerHTML = html;
+  
+  // Set up audio if available
+  if (scene.audio_url) {
+    previewAudio = new Audio(scene.audio_url);
+    console.log('Audio loaded:', scene.audio_url);
+  } else {
+    previewAudio = null;
+    console.log('No audio_url found');
+  }
+  
+  // Update play button
+  const playBtn = document.querySelector('.preview-controls .btn-secondary');
+  if (!previewAudio) {
+    playBtn.style.opacity = '0.5';
+    playBtn.style.cursor = 'not-allowed';
+    playBtn.innerHTML = '🔇 No Audio Generated';
+  } else {
+    playBtn.style.opacity = '1';
+    playBtn.style.cursor = 'pointer';
+    playBtn.innerHTML = '🔊 Play Audio';
+  }
+  
+  // Show modal
+  document.getElementById('previewOverlay').classList.add('active');
+  document.getElementById('previewModal').classList.add('active');
+}
+
+function closePreview() {
+  if (previewAudio) {
+    previewAudio.pause();
+    previewAudio = null;
+  }
+  document.getElementById('previewOverlay').classList.remove('active');
+  document.getElementById('previewModal').classList.remove('active');
+}
+
+function playPreviewAudio() {
+  if (previewAudio) {
+    if (previewAudio.paused) {
+      previewAudio.play();
+    } else {
+      previewAudio.pause();
+      previewAudio.currentTime = 0;
+      previewAudio.play();
+    }
+  } else {
+    alert('No audio available for this scene');
+  }
+}
+
+// Close preview on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closePreview();
+  }
+});
+
+</script>
+<!-- Preview Modal -->
+<div class="preview-overlay" id="previewOverlay" onclick="if(event.target===this)closePreview()"></div>
+<div class="preview-modal" id="previewModal">
+  <button class="preview-close" onclick="closePreview()">✕</button>
+  <div class="preview-viewport" id="previewViewport"></div>
+  <div class="preview-controls">
+    <button class="btn btn-secondary" onclick="playPreviewAudio()">🔊 Play Audio</button>
+    <button class="btn btn-secondary" onclick="closePreview()">Close</button>
+  </div>
+</div>
+</body>
+</body>
+</html>

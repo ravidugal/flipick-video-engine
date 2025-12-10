@@ -773,7 +773,7 @@ async function loadProject() {
     console.log('Loading project:', projectId);
     
     // Fetch project details (includes scenes in response)
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token");
     const projectRes = await fetch(`${API}/projects/${projectId}`, {
       headers: { "Authorization": `Bearer ${token}` }
     });
@@ -787,7 +787,7 @@ async function loadProject() {
     document.getElementById('projectName').textContent = project.name || project.course_name || 'Untitled Project';
     
     // Extract scenes from project response
-    scenes = project.scenes || [];
+    scenes = projectData.scenes || [];
     console.log('Loaded scenes:', scenes.length);
     
     document.getElementById('sceneCount').textContent = `${scenes.length} scene${scenes.length !== 1 ? 's' : ''}`;
